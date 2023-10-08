@@ -13,8 +13,51 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\core">
+      <UniqueIdentifier>{da7bd596-de9e-43bc-b4c2-86936073441f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\helper">
+      <UniqueIdentifier>{f1ab3d6a-1c49-45bb-8eb3-3c7b8ee36287}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\helper">
+      <UniqueIdentifier>{20b9580f-12fd-49a6-b9e2-e63addd0a2d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core">
+      <UniqueIdentifier>{497fb574-0d4d-40f1-a459-b9428cd89fe4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="source\core\Address.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="source\core\Game.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="source\core\Program.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\core\Game.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\Program.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\Address.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\Process.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="include\helper\Helper.h">
+      <Filter>Header Files\helper</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
