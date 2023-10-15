@@ -10,13 +10,26 @@
 
 namespace helper
 {
+	TCHAR* convertLPCWSTRToTcharPtr(LPCWSTR input)
+	{
+		TCHAR* output = NULL;
+		if (input != NULL && input[0] != _T('0'))
+		{
+			const int outputLength = WideCharToMultiByte(CP_UTF8, 0, input, -1, NULL, 0, NULL, NULL);
+			output = new TCHAR[outputLength + 1];
+			//...
+
+		}
+		return output;
+	}
+
 	TCHAR* convertStringToTCHARPtr(const std::string& string)
 	{
 		TCHAR* result = NULL;
 		if (string.size() != 0)
 		{
 			result = new TCHAR[string.size() + 1];
-			result[string.size()] = 0;
+			result[string.size()] = '\0';
 			std::copy(string.begin(), string.end(), result);
 		}
 		return result;

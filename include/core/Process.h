@@ -1,58 +1,80 @@
 #pragma once
 
-#include <Windows.h>
-#include <SDKDDKVer.h>
-#include <TlHelp32.h>
-#include <tchar.h>
+#include <iostream>
 
-class Process
+#include "Program.h"
+
+namespace ghe
 {
-public:
-	explicit Process() :m_baseAddress(NULL), m_hProcess(NULL), m_pid(NULL), m_hwnd(NULL), m_processName(NULL), m_baseModuleName(NULL) {}
-
-	virtual ~Process() = 0;
-
-	explicit Process(DWORD_PTR baseAddress, HANDLE hProcess, DWORD pid, HWND gameHwnd, LPCWSTR processName, LPCWSTR baseModuleName) :
-		m_baseAddress(baseAddress), m_hProcess(hProcess), m_pid(pid), m_hwnd(gameHwnd), m_processName(processName), m_baseModuleName(baseModuleName)
+	class Process : public Program
 	{
-	}
+	public:
+		explicit Process(DWORD_PTR baseAddress, HANDLE hProcess, DWORD pid, HWND gameHwnd, LPCWSTR processName, LPCWSTR baseModuleName) :
+			Program(baseAddress, hProcess, pid, gameHwnd, processName, baseModuleName) {}
 
-	explicit Process(DWORD_PTR&& baseAddress, HANDLE&& hProcess, DWORD&& pid, HWND&& gameHwnd, LPCWSTR&& processName, LPCWSTR&& baseModuleName) :
-		m_baseAddress(std::move(baseAddress)), m_hProcess(std::move(hProcess)), m_pid(std::move(pid)), m_hwnd(std::move(gameHwnd)),
-		m_processName(std::move(processName)), m_baseModuleName(std::move(baseModuleName))
-	{
-	}
+		virtual ~Process() = 0;
 
-	const DWORD_PTR baseAddress() const { return m_baseAddress; }
-	const HANDLE hProcess() const { return m_hProcess; }
-	const DWORD pid() const { return m_pid; }
-	const HWND hwnd() const { return m_hwnd; }
-	const LPCWSTR processName() const { return m_processName; }
-	const LPCWSTR baseModuleName() const { return m_baseModuleName; }
+		explicit Process(DWORD_PTR&& baseAddress, HANDLE&& hProcess, DWORD&& pid, HWND&& gameHwnd, LPCWSTR&& processName, LPCWSTR&& baseModuleName) :
+			Program(baseAddress, hProcess, pid, gameHwnd, processName, baseModuleName) {}
 
-	void setBaseAddress(DWORD_PTR baseAddress) {}
-	void setHProcess(const HANDLE& hProcess) {}
-	void setPid(const DWORD& pid) {}
-	void setHwnd(const HWND& hwnd) {}
-	void processName(const std::string& processName) {}
-	void processName(const std::string& baseModuleName) {}
+		virtual Process& operator=(const Process& other);
+		virtual Process& operator=(Process&& other) noexcept;
 
+		void setupHwnd()
+		{
+			m_hwnd = FindWindow(NULL, m_processName);
+		}
 
-	virtual void log() = 0;
-	virtual void setupHwnd() = 0;
-	virtual void setupPid() = 0;
-	virtual void setupHProcess() = 0;
-	virtual void setupBaseAddress() = 0;
+		void setupPid()
+		{
+			GetWindowThreadProcessId(m_hwnd, &m_pid);
+		}
 
-	virtual Process& operator=(const Process& other) = 0;
-	virtual Process& operator=(Process&& other) noexcept = 0;
+		void setupHProcess()
+		{
+			m_hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, m_pid);
+		}
 
-protected:
-	DWORD_PTR m_baseAddress;
-	HANDLE m_hProcess;
-	DWORD m_pid;
-	HWND m_hwnd;
-	LPCWSTR m_processName;
-	LPCWSTR m_baseModuleName; //should be casted into a TCHAR[]
-};
+		virtual void setupBaseAddress() = 0;
+
+		/*inline void setupDynamicAddress(int pointerLevel, DWORD* offsets, DWORD staticOffset) {
+			m_dynamicAddress = FindTheAddr(m_hProcess, pointerLevel, offsets, m_baseAddress, m_staticAddress, staticOffset);
+
+		}*/
+
+		//DWORD readDynamicAddrValue()
+		//{
+		//	DWORD value;
+		//	ReadProcessMemory(m_hProcess, (LPCVOID)m_dynamicAddress, (LPVOID)&value, sizeof(value), NULL);
+		//	//std::cout << "Inside function: " << value << std::endl;
+		//	return value;
+		//}
+
+		//DWORD readStaticAddrValue()
+		//{
+		//	DWORD value;
+		//	ReadProcessMemory(m_hProcess, (LPCVOID)m_staticAddress, (LPVOID)&value, sizeof(value), NULL);
+		//	//std::cout << "Inside function: " << value << std::endl;
+		//	return value;
+		//}
+
+		/*inline int writeValue()
+		{
+
+		}*/
+
+		// Debug functions
+		void log()
+		{
+			std::cout << "hProcess: " << m_hProcess << std::endl;
+			std::cout << "PID: " << m_pid << std::endl;
+			std::cout << "gameHwnd: " << m_hwnd << std::endl;
+			std::cout << "base addresse: " << m_baseAddress << std::endl;
+		}
+
+	protected:
+		std::cout << "hProcess: " << m_hProcess << std::endl;
+		std::cout << "gameHwnd: " << m_hwnd << std::endl;
+	};
+} //end namespace ghe
 

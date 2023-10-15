@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Address.h"
-#include "Program.h"
+#include "Process.h"
 #include "../../include/helper/Helper.h"
 
 #include <vector>
@@ -61,11 +60,11 @@ namespace
 
 namespace ghe
 {
-	class Game : public Program
+	class Game : public Process
 	{
 	public:
 		explicit Game(DWORD_PTR baseAddress, HANDLE hProcess, DWORD pid, HWND gameHwnd, LPCWSTR processName, LPCWSTR baseModuleName) :
-			Program(baseAddress, hProcess, pid, gameHwnd, processName, baseModuleName) {
+			Process(baseAddress, hProcess, pid, gameHwnd, processName, baseModuleName) {
 			if (m_addresses.empty())
 			{
 				m_addresses.reserve(addressesCount);
@@ -78,7 +77,7 @@ namespace ghe
 		}
 
 		explicit Game(DWORD_PTR&& baseAddress, HANDLE&& hProcess, DWORD&& pid, HWND&& gameHwnd, LPCWSTR&& processName, LPCWSTR&& baseModuleName) :
-			Program(baseAddress, hProcess, pid, gameHwnd, processName, baseModuleName) {
+			Process(baseAddress, hProcess, pid, gameHwnd, processName, baseModuleName) {
 			if (m_addresses.empty())
 			{
 				m_addresses.reserve(addressesCount);

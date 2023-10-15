@@ -1,6 +1,6 @@
-#include "../../include/core/Program.h"
+#include "../../include/core/Process.h"
 
-ghe::Program& ghe::Program::operator=(const Program& other)
+ghe::Process& ghe::Process::operator=(const Process& other)
 {
 	if (this != &other)
 	{
@@ -13,7 +13,7 @@ ghe::Program& ghe::Program::operator=(const Program& other)
 	return *this;
 }
 
-ghe::Program& ghe::Program::operator=(Program&& other) noexcept
+ghe::Process& ghe::Process::operator=(Process&& other) noexcept
 {
 	if (this != &other)
 	{

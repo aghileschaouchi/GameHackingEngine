@@ -25,9 +25,25 @@
     <Filter Include="Source Files\core">
       <UniqueIdentifier>{497fb574-0d4d-40f1-a459-b9428cd89fe4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="tests">
+      <UniqueIdentifier>{004415bc-08e5-4516-ab7a-f8012ded0ee6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tests\include">
+      <UniqueIdentifier>{91d5c8e6-46b9-4f40-8097-24faa87574ac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tests\source">
+      <UniqueIdentifier>{5b6abdfe-23ac-4c51-8899-bfac6c703217}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tests\include\GameHackingEngineTests">
+      <UniqueIdentifier>{c66ebb88-574d-4609-8410-22d9f2b34048}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tests\include\catch2">
+      <UniqueIdentifier>{ca17f5f9-d00b-4edf-b4e2-744e3e987f80}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
+    <None Include=".gitignore" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\core\Address.cpp">
@@ -36,28 +52,40 @@
     <ClCompile Include="source\core\Game.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="source\core\Program.cpp">
+    <ClCompile Include="source\core\Process.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="tests\source\AllTests.cpp">
+      <Filter>tests\source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\Game.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="include\core\Program.h">
+    <ClInclude Include="include\core\Process.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="include\core\Address.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="include\core\Process.h">
+    <ClInclude Include="include\core\Program.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="include\helper\Helper.h">
       <Filter>Header Files\helper</Filter>
     </ClInclude>
+    <ClInclude Include="tests\include\catch\catch.hpp">
+      <Filter>tests\include\catch2</Filter>
+    </ClInclude>
+    <ClInclude Include="tests\include\GameHackingEngineTests\TestsGame.h">
+      <Filter>tests\include\GameHackingEngineTests</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
+    <Text Include="tests\CMakeLists.txt">
+      <Filter>tests</Filter>
+    </Text>
   </ItemGroup>
 </Project>

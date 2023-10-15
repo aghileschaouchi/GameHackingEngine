@@ -1,79 +1,51 @@
 #pragma once
 
-#include <iostream>
+#include <memory>
+#include <Windows.h>
+#include <SDKDDKVer.h>
+#include <TlHelp32.h>
+#include <tchar.h>
 
 #include "Address.h"
-#include "Process.h"
 
-namespace ghe
+class Program
 {
-	class Program : public Process
+public:
+	explicit Program() : m_baseAddress(nullptr),  m_pid(0) { }
+
+	virtual ~Program() = 0;
+
+	explicit Program(std::unique_ptr<ghe::Address>& baseAddress, unsigned long& pid, std::string& programName) : m_pid(pid), m_programName(programName)
 	{
-	public:
-		explicit Program(DWORD_PTR baseAddress, HANDLE hProcess, DWORD pid, HWND gameHwnd, LPCWSTR processName, LPCWSTR baseModuleName) :
-			Process(baseAddress, hProcess, pid, gameHwnd, processName, baseModuleName) {}
+		m_baseAddress = std::make_unique<ghe::Address>();
+		std::copy(baseAddress.get(), baseAddress.get() + 1, m_baseAddress.get());
+	}
 
-		virtual ~Program() = 0;
+	explicit Program(std::unique_ptr<ghe::Address>&& baseAddress, unsigned long&& pid, std::string&& programName) : m_pid(std::move(pid)), m_programName(std::move(programName))
+	{
+		m_baseAddress = std::make_unique<ghe::Address>();
+		std::move(baseAddress.get(), baseAddress.get() + 1, m_baseAddress.get());
+	}
 
-		explicit Program(DWORD_PTR&& baseAddress, HANDLE&& hProcess, DWORD&& pid, HWND&& gameHwnd, LPCWSTR&& processName, LPCWSTR&& baseModuleName) :
-			Process(baseAddress, hProcess, pid, gameHwnd, processName, baseModuleName) {}
+	const ghe::Address* baseAddress() const { return m_baseAddress.get(); }
+	const unsigned long pid() const { return m_pid; }
+	const std::string processName() const { return m_programName; }
 
-		virtual Program& operator=(const Program& other);
-		virtual Program& operator=(Program&& other) noexcept;
+	void setBaseAddress(const std::unique_ptr<ghe::Address>& baseAddress) {}
+	void setPid(unsigned long& pid) {}
+	void processName(const std::string& processName) {}
 
-		void setupHwnd()
-		{
-			m_hwnd = FindWindow(NULL, m_processName);
-		}
 
-		void setupPid()
-		{
-			GetWindowThreadProcessId(m_hwnd, &m_pid);
-		}
+	virtual void log() = 0;
+	virtual void setupPid() = 0;
+	virtual void setupBaseAddress() = 0;
 
-		void setupHProcess()
-		{
-			m_hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, m_pid);
-		}
+	virtual Program& operator=(const Program& other) = 0;
+	virtual Program& operator=(Program&& other) noexcept = 0;
 
-		virtual void setupBaseAddress() = 0;
-
-		/*inline void setupDynamicAddress(int pointerLevel, DWORD* offsets, DWORD staticOffset) {
-			m_dynamicAddress = FindTheAddr(m_hProcess, pointerLevel, offsets, m_baseAddress, m_staticAddress, staticOffset);
-
-		}*/
-
-		//DWORD readDynamicAddrValue()
-		//{
-		//	DWORD value;
-		//	ReadProcessMemory(m_hProcess, (LPCVOID)m_dynamicAddress, (LPVOID)&value, sizeof(value), NULL);
-		//	//std::cout << "Inside function: " << value << std::endl;
-		//	return value;
-		//}
-
-		//DWORD readStaticAddrValue()
-		//{
-		//	DWORD value;
-		//	ReadProcessMemory(m_hProcess, (LPCVOID)m_staticAddress, (LPVOID)&value, sizeof(value), NULL);
-		//	//std::cout << "Inside function: " << value << std::endl;
-		//	return value;
-		//}
-
-		/*inline int writeValue()
-		{
-
-		}*/
-
-		// Debug functions
-		void log()
-		{
-			std::cout << "hProcess: " << m_hProcess << std::endl;
-			std::cout << "PID: " << m_pid << std::endl;
-			std::cout << "gameHwnd: " << m_hwnd << std::endl;
-			std::cout << "base addresse: " << m_baseAddress << std::endl;
-		}
-
-	private:
-	};
-} //end namespace ghe
+protected:
+	std::unique_ptr<ghe::Address> m_baseAddress;
+	unsigned long m_pid;
+	std::string m_programName;
+};
 

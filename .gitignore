@@ -1,0 +1,6 @@
+.vs/*
+CMakePresets.json
+out/*
+Debug/*
+Release/*
+x64/*
