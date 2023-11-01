@@ -1,80 +1,59 @@
 #pragma once
 
-#include <iostream>
-
 #include "Program.h"
+
+//use printf for the moment, should be replaced by Boost.Log
+#include <cstdio>
 
 namespace ghe
 {
-	class Process : public Program
+	template<typename T, typename S>
+	class Process : public Program<T, S>
 	{
 	public:
-		explicit Process(DWORD_PTR baseAddress, HANDLE hProcess, DWORD pid, HWND gameHwnd, LPCWSTR processName, LPCWSTR baseModuleName) :
-			Program(baseAddress, hProcess, pid, gameHwnd, processName, baseModuleName) {}
+		using Program<T, S>::Program;
 
-		virtual ~Process() = 0;
+		Process(std::unique_ptr<ghe::Address>& baseAddress, T& pid, S& programName) :
+			Program<T, S>(baseAddress, pid, programName) {}
 
-		explicit Process(DWORD_PTR&& baseAddress, HANDLE&& hProcess, DWORD&& pid, HWND&& gameHwnd, LPCWSTR&& processName, LPCWSTR&& baseModuleName) :
-			Program(baseAddress, hProcess, pid, gameHwnd, processName, baseModuleName) {}
+		Process(std::unique_ptr<ghe::Address>&& baseAddress, T&& pid, S&& programName) :
+			Program<T, S>(std::forward<std::unique_ptr<ghe::Address>>(baseAddress), std::forward<T>(pid), std::forward<S>(programName)) {}
 
-		virtual Process& operator=(const Process& other);
-		virtual Process& operator=(Process&& other) noexcept;
-
-		void setupHwnd()
+		virtual ~Process() override
 		{
-			m_hwnd = FindWindow(NULL, m_processName);
+
 		}
 
-		void setupPid()
+		Process& operator=(const Process& other)
 		{
-			GetWindowThreadProcessId(m_hwnd, &m_pid);
+			if (this != &other)
+			{
+				this->m_baseAddress = other.m_baseAddress;
+				this->m_pid = other.m_pid;
+				this->m_processName = other.m_processName;
+			}
+			return *this;
 		}
 
-		void setupHProcess()
+		Process& operator=(Process&& other) noexcept
 		{
-			m_hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, m_pid);
+			if (this != &other)
+			{
+				// put in place deletes
+				this->m_baseAddress = std::move(other.m_baseAddress);
+				this->m_pid = std::move(other.m_pid);
+				this->m_processName = std::move(other.m_processName);
+			}
+			return *this;
 		}
 
-		virtual void setupBaseAddress() = 0;
-
-		/*inline void setupDynamicAddress(int pointerLevel, DWORD* offsets, DWORD staticOffset) {
-			m_dynamicAddress = FindTheAddr(m_hProcess, pointerLevel, offsets, m_baseAddress, m_staticAddress, staticOffset);
-
-		}*/
-
-		//DWORD readDynamicAddrValue()
-		//{
-		//	DWORD value;
-		//	ReadProcessMemory(m_hProcess, (LPCVOID)m_dynamicAddress, (LPVOID)&value, sizeof(value), NULL);
-		//	//std::cout << "Inside function: " << value << std::endl;
-		//	return value;
-		//}
-
-		//DWORD readStaticAddrValue()
-		//{
-		//	DWORD value;
-		//	ReadProcessMemory(m_hProcess, (LPCVOID)m_staticAddress, (LPVOID)&value, sizeof(value), NULL);
-		//	//std::cout << "Inside function: " << value << std::endl;
-		//	return value;
-		//}
-
-		/*inline int writeValue()
+		virtual void log() override
 		{
-
-		}*/
-
-		// Debug functions
-		void log()
-		{
-			std::cout << "hProcess: " << m_hProcess << std::endl;
-			std::cout << "PID: " << m_pid << std::endl;
-			std::cout << "gameHwnd: " << m_hwnd << std::endl;
-			std::cout << "base addresse: " << m_baseAddress << std::endl;
+			static const char* processNameLogMessage = "process name: ";
+			static const char* pidLogMessage = "PID:";
+			static const char* baseAddressLogMessage = "base address:";
+			printf("%s %s\n %s %d\n %s %x\n", processNameLogMessage, this->m_programName, pidLogMessage, this->m_pid, baseAddressLogMessage, this->m_baseAddress->toString());
 		}
-
-	protected:
-		std::cout << "hProcess: " << m_hProcess << std::endl;
-		std::cout << "gameHwnd: " << m_hwnd << std::endl;
 	};
 } //end namespace ghe
 

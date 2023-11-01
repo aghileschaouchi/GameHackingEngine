@@ -133,15 +133,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\core\Address.cpp" />
-    <ClCompile Include="source\core\Game.cpp" />
+    <ClCompile Include="source\core\WInGame.cpp" />
     <ClCompile Include="source\core\Process.cpp" />
+    <ClCompile Include="source\core\WinProcess.cpp" />
     <ClCompile Include="tests\source\AllTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\Address.h" />
-    <ClInclude Include="include\core\Game.h" />
+    <ClInclude Include="include\core\WinGame.h" />
     <ClInclude Include="include\core\Program.h" />
     <ClInclude Include="include\core\Process.h" />
+    <ClInclude Include="include\core\WinProcess.h" />
     <ClInclude Include="include\helper\Helper.h" />
     <ClInclude Include="tests\include\catch\catch.hpp" />
     <ClInclude Include="tests\include\GameHackingEngineTests\TestsGame.h" />
