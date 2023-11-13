@@ -7,8 +7,6 @@
 
 namespace
 {
-	static const uint16_t addressesCount = 10;
-
 	DWORD_PTR dwGetModuleBaseAddress(DWORD dwProcessIdentifier, TCHAR* szModuleName)
 	{
 		DWORD_PTR dwModuleBaseAddress = 0;
@@ -38,21 +36,15 @@ namespace
 	{
 		DWORD tmp_addr = NULL;
 		DWORD dynamicAddress = NULL;
-
 		ReadProcessMemory(hProcess, (LPCVOID)(baseAddress + staticOffset), (LPVOID)&staticAddress, sizeof(staticAddress), NULL);
-		std::cout << "addr: " << std::hex << staticAddress << std::endl;
-
 		dynamicAddress = staticAddress;
 		for (int i = 0; i < pointerLevel; i++)
 		{
 			dynamicAddress += offsets[i];
 			ReadProcessMemory(hProcess, (LPCVOID)(dynamicAddress), (LPVOID)&tmp_addr, sizeof(tmp_addr), NULL);
-			std::cout << "addr: " << std::hex << dynamicAddress << std::endl;
 			dynamicAddress = tmp_addr;
 		}
-
 		dynamicAddress += offsets[pointerLevel];
-		std::cout << "addr: " << std::hex << dynamicAddress << std::endl;
 
 		return dynamicAddress;
 	}
@@ -60,17 +52,34 @@ namespace
 
 namespace ghe
 {
-	template<DWORD, LPCWSTR, HANDLE, HWND>
-	class WinGame : public WinProcess<DWORD, LPCWSTR, HANDLE, HWND>
+	template <typename T, typename S, typename P, typename H, typename A, unsigned int AC = 10>
+	class WinGame : public WinProcess<T, S, P, H, A>
 	{
 	public:
-		using WinProcess<DWORD, LPCWSTR, HANDLE, HWND>::WinProcess;
-
-		WinGame(DWORD_PTR baseAddress, HANDLE hProcess, DWORD pid, HWND gameHwnd, LPCWSTR processName, LPCWSTR baseModuleName) :
-			WinProcess<DWORD, LPCWSTR, HANDLE, HWND>(baseAddress, hProcess, pid, gameHwnd, processName) {
+		//copy
+		WinGame(std::unique_ptr<ghe::Address<A>>& baseAddress, T& pid, S& programName, P& hProcess, H& hwnd, std::string& baseModuleName) = delete;
+		WinGame(ghe::Address<A>& baseAddressContent, T& pid, S& programName, P& hProcess, H& hwnd, std::string& baseModuleName) = delete;
+		//move
+		WinGame(std::unique_ptr<ghe::Address<A>> &&baseAddress, T&& pid, S&& programName, P&& hProcess, H&& hwnd, std::string&& baseModuleName) :
+			WinProcess<T, S, P, H, A>(std::move(baseAddress), std::forward<T>(pid), std::forward<S>(programName),
+				std::forward<P>(hProcess), std::forward<H>(hwnd)), m_baseModuleName(std::move(baseModuleName)) {
 			if (m_addresses.empty())
 			{
-				m_addresses.reserve(addressesCount);
+				m_addresses.reserve(AC);
+			}
+			setupHwnd();
+			setupPid();
+			setupHProcess();
+			setupBaseAddress();
+			log();
+		}
+		
+		WinGame(ghe::Address<A>&&baseAddressContent, T&& pid, S&& programName, P&& hProcess, H&& hwnd, std::string&& baseModuleName) :
+			WinProcess<T, S, P, H, A>(std::move(baseAddressContent), std::forward<T>(pid), std::forward<S>(programName),
+				std::forward<P>(hProcess), std::forward<H>(hwnd)), m_baseModuleName(std::move(baseModuleName)) {
+			if (m_addresses.empty())
+			{
+				m_addresses.reserve(AC);
 			}
 			setupHwnd();
 			setupPid();
@@ -79,31 +88,53 @@ namespace ghe
 			log();
 		}
 
-		WinGame(DWORD_PTR&& baseAddress, HANDLE&& hProcess, DWORD&& pid, HWND&& gameHwnd, LPCWSTR&& processName, LPCWSTR&& baseModuleName) :
-			WinProcess<DWORD, LPCWSTR, HANDLE, HWND>(baseAddress, hProcess, pid, gameHwnd, processName) {
-			if (m_addresses.empty())
-			{
-				m_addresses.reserve(addressesCount);
-			}
-			setupHwnd();
-			setupPid();
-			setupHProcess();
-			setupBaseAddress();
-			log();
-		}
+		virtual ~WinGame() { if (this->m_hProcess != NULL) CloseHandle(this->m_hProcess); }
 
-		virtual ~WinGame() { if (m_hProcess != NULL) CloseHandle(m_hProcess); }
-
-		void setupBaseAddress()
+		inline void setupBaseAddress()
 		{
-			m_baseAddress = dwGetModuleBaseAddress(m_pid, helper::convertStringToTCHARPtr(m_baseModuleName));
+			DWORD_PTR _baseModuleAddress = dwGetModuleBaseAddress(this->m_pid, helper::convertStringToTCHARPtr(m_baseModuleName)); //helper functions should be fixed
+			this->m_baseAddress.get()->setAddress(static_cast<DWORD_PTR>(_baseModuleAddress));
+			this->m_baseAddress.get()->setStatic(); //access to unique_ptr's Address value to be checked
 		}
 
+		inline void setupHwnd()
+		{
+			this->m_hwnd = FindWindow(NULL, this->m_programName);
+		}
+
+		inline void setupPid()
+		{
+			GetWindowThreadProcessId(this->m_hwnd, &this->m_pid);
+		}
+
+		inline void setupHProcess()
+		{
+			this->m_hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, this->m_pid);
+		}
+
+		WinGame& operator=(const WinGame& other) = delete;
+
+		WinGame& operator=(WinGame&& other) noexcept
+		{
+			if (this != &other)
+			{
+				this->m_baseAddress.reset();
+				this->m_baseAddress = std::move(other.m_baseAddress);
+				this->m_hProcess = std::move(other.m_hProcess);
+				this->m_pid = std::move(other.m_pid);
+				this->m_hwnd = std::move(other.m_hwnd);
+				this->m_processName = std::move(other.m_processName);
+				this->m_baseModuleName = std::move(other.m_baseModuleName);
+			}
+			return *this;
+		}
+
+		// SHOULD BE ISOLATED WITH A DESIGN PATTERN
 		/*inline void setupDynamicAddress(int pointerLevel, DWORD* offsets, DWORD staticOffset) {
 		m_dynamicAddress = FindTheAddr(m_hProcess, pointerLevel, offsets, m_baseAddress, m_staticAddress, staticOffset);
 		}*/
 
-		//DWORD readDynamicAddrValue()
+		//inline DWORD readDynamicAddrValue()
 		//{
 		//	DWORD value;
 		//	ReadProcessMemory(m_hProcess, (LPCVOID)m_dynamicAddress, (LPVOID)&value, sizeof(value), NULL);
@@ -111,7 +142,7 @@ namespace ghe
 		//	return value;
 		//}
 
-		//DWORD readStaticAddrValue()
+		//inline DWORD readStaticAddrValue()
 		//{
 		//	DWORD value;
 		//	ReadProcessMemory(m_hProcess, (LPCVOID)m_staticAddress, (LPVOID)&value, sizeof(value), NULL);
@@ -124,37 +155,17 @@ namespace ghe
 
 		}*/
 
-		WinGame& operator=(const WinGame& other)
+		void log() override
 		{
-			if (this != &other)
-			{
-				this->m_baseAddress = other.m_baseAddress;
-				this->m_hProcess = other.m_hProcess;
-				this->m_pid = other.m_pid;
-				this->m_hwnd = other.m_hwnd;
-				this->m_processName = other.m_processName;
-				this->m_baseModuleName = other.m_baseModuleName;
-			}
-			return *this;
-		}
-
-		WinGame& operator=(WinGame&& other) noexcept
-		{
-			if (this != &other)
-			{
-				this->m_baseAddress = std::move(other.m_baseAddress);
-				this->m_hProcess = std::move(other.m_hProcess);
-				this->m_pid = std::move(other.m_pid);
-				this->m_hwnd = std::move(other.m_hwnd);
-				this->m_processName = std::move(other.m_processName);
-				this->m_baseModuleName = std::move(other.m_baseModuleName);
-			}
-			return *this;
+			static const char* processNameLogMessage = "process name: ";
+			static const char* pidLogMessage = "PID:";
+			static const char* baseAddressLogMessage = "base address:";
+			printf("%s %s\n %s %d\n %s %s\n", processNameLogMessage, this->m_programName, pidLogMessage, this->m_pid, baseAddressLogMessage, this->m_baseAddress->toString().c_str());
 		}
 
 	private:
-		std::vector<ghe::Address> m_addresses;
-		LPCWSTR m_baseModuleName;
+		std::vector<ghe::Address<A>> m_addresses; //should be added to the constructors?
+		std::string m_baseModuleName;
 	};
 }
 

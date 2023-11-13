@@ -1,30 +1,36 @@
 #pragma once
 
+//use printf for the moment, should be replaced by Boost.Log
+#include <cstdio> 
 #include <string>
 #include <utility>
 
 #include <Windows.h>
-#include <SDKDDKVer.h>
 #include <TlHelp32.h>
-#include <tchar.h>
+
+#pragma comment(lib, "kernel32.lib") 
 
 namespace ghe
 {
+	template <typename A>
 	class Address
 	{
 	public:
-		explicit Address() : m_address(0x0), m_isStatic(false) {}
-		Address(bool isStatic = false) : m_isStatic(isStatic), m_address(0x0) {}
-		Address(unsigned int& address, bool isStatic = false) : m_isStatic(isStatic), m_address(address) {}
-		Address(unsigned int&& address, bool&& isStatic = false) : m_isStatic(std::move(isStatic)), m_address(std::move(address)) {}
+		Address() : m_address(0x0), m_isStatic(FALSE) {}
+		Address(bool isStatic, A address) : m_address(address), m_isStatic(isStatic) {}
+		~Address() {}
 
-		Address& operator=(const Address& other);
-		Address& operator=(Address&& other) noexcept;
+		void setAddress(const unsigned long address) { m_address = address; }
+		void setStatic() { m_isStatic = true; }
 
-		std::string toString();
+		std::string toString()
+		{
+			const std::string logMessage = (m_isStatic) ? "Static addres: " + m_address : "Dynamic address: " + m_address;
+			return logMessage;
+		}
 
 	private:
-		unsigned int m_address;
+		A m_address;
 		bool m_isStatic;
 	};
 }

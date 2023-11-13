@@ -125,6 +125,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -132,10 +133,6 @@
     <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="source\core\Address.cpp" />
-    <ClCompile Include="source\core\WInGame.cpp" />
-    <ClCompile Include="source\core\Process.cpp" />
-    <ClCompile Include="source\core\WinProcess.cpp" />
     <ClCompile Include="tests\source\AllTests.cpp" />
   </ItemGroup>
   <ItemGroup>
