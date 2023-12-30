@@ -23,6 +23,8 @@ namespace ghe
 		void setAddress(const unsigned long address) { m_address = address; }
 		void setStatic() { m_isStatic = true; }
 
+		const A getValue() { return m_address; }
+
 		std::string toString()
 		{
 			const std::string logMessage = (m_isStatic) ? "Static addres: " + m_address : "Dynamic address: " + m_address;

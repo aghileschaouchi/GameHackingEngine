@@ -30,24 +30,6 @@ namespace
 		}
 		return dwModuleBaseAddress;
 	}
-
-	TCHAR baseModuleName[13] = TEXT("somegame.exe");
-	DWORD FindTheAddr(HANDLE hProcess, int pointerLevel, DWORD offsets[], DWORD_PTR baseAddress, DWORD staticAddress, DWORD staticOffset)
-	{
-		DWORD tmp_addr = NULL;
-		DWORD dynamicAddress = NULL;
-		ReadProcessMemory(hProcess, (LPCVOID)(baseAddress + staticOffset), (LPVOID)&staticAddress, sizeof(staticAddress), NULL);
-		dynamicAddress = staticAddress;
-		for (int i = 0; i < pointerLevel; i++)
-		{
-			dynamicAddress += offsets[i];
-			ReadProcessMemory(hProcess, (LPCVOID)(dynamicAddress), (LPVOID)&tmp_addr, sizeof(tmp_addr), NULL);
-			dynamicAddress = tmp_addr;
-		}
-		dynamicAddress += offsets[pointerLevel];
-
-		return dynamicAddress;
-	}
 }
 
 namespace ghe
@@ -60,7 +42,7 @@ namespace ghe
 		WinGame(std::unique_ptr<ghe::Address<A>>& baseAddress, T& pid, S& programName, P& hProcess, H& hwnd, std::string& baseModuleName) = delete;
 		WinGame(ghe::Address<A>& baseAddressContent, T& pid, S& programName, P& hProcess, H& hwnd, std::string& baseModuleName) = delete;
 		//move
-		WinGame(std::unique_ptr<ghe::Address<A>> &&baseAddress, T&& pid, S&& programName, P&& hProcess, H&& hwnd, std::string&& baseModuleName) :
+		WinGame(std::unique_ptr<ghe::Address<A>>&& baseAddress, T&& pid, S&& programName, P&& hProcess, H&& hwnd, std::string&& baseModuleName) :
 			WinProcess<T, S, P, H, A>(std::move(baseAddress), std::forward<T>(pid), std::forward<S>(programName),
 				std::forward<P>(hProcess), std::forward<H>(hwnd)), m_baseModuleName(std::move(baseModuleName)) {
 			if (m_addresses.empty())
@@ -73,8 +55,8 @@ namespace ghe
 			setupBaseAddress();
 			log();
 		}
-		
-		WinGame(ghe::Address<A>&&baseAddressContent, T&& pid, S&& programName, P&& hProcess, H&& hwnd, std::string&& baseModuleName) :
+
+		WinGame(ghe::Address<A>&& baseAddressContent, T&& pid, S&& programName, P&& hProcess, H&& hwnd, std::string&& baseModuleName) :
 			WinProcess<T, S, P, H, A>(std::move(baseAddressContent), std::forward<T>(pid), std::forward<S>(programName),
 				std::forward<P>(hProcess), std::forward<H>(hwnd)), m_baseModuleName(std::move(baseModuleName)) {
 			if (m_addresses.empty())
@@ -128,32 +110,6 @@ namespace ghe
 			}
 			return *this;
 		}
-
-		// SHOULD BE ISOLATED WITH A DESIGN PATTERN
-		/*inline void setupDynamicAddress(int pointerLevel, DWORD* offsets, DWORD staticOffset) {
-		m_dynamicAddress = FindTheAddr(m_hProcess, pointerLevel, offsets, m_baseAddress, m_staticAddress, staticOffset);
-		}*/
-
-		//inline DWORD readDynamicAddrValue()
-		//{
-		//	DWORD value;
-		//	ReadProcessMemory(m_hProcess, (LPCVOID)m_dynamicAddress, (LPVOID)&value, sizeof(value), NULL);
-		//	//std::cout << "Inside function: " << value << std::endl;
-		//	return value;
-		//}
-
-		//inline DWORD readStaticAddrValue()
-		//{
-		//	DWORD value;
-		//	ReadProcessMemory(m_hProcess, (LPCVOID)m_staticAddress, (LPVOID)&value, sizeof(value), NULL);
-		//	//std::cout << "Inside function: " << value << std::endl;
-		//	return value;
-		//}
-
-		/*inline int writeValue()
-		{
-
-		}*/
 
 		void log() override
 		{
