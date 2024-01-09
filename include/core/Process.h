@@ -15,6 +15,7 @@ namespace ghe
 		//copy
 		Process(std::unique_ptr<ghe::Address<A>>& baseAddress, T& pid, S& programName) = delete;
 		Process(ghe::Address<A>& baseAddressContent, T& pid, S& programName) = delete;
+
 		//move
 		Process(std::unique_ptr<ghe::Address<A>>&& baseAddress, T&& pid, S&& programName) :
 			Program<T, S, A>(std::move(baseAddress), std::forward<T>(pid), std::forward<S>(programName)) {}

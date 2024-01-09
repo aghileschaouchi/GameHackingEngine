@@ -70,11 +70,14 @@ namespace ghe
 			log();
 		}
 
-		virtual ~WinGame() { if (this->m_hProcess != NULL) CloseHandle(this->m_hProcess); }
+		virtual ~WinGame() override { if (this->m_hProcess != NULL) CloseHandle(this->m_hProcess); }
 
 		inline void setupBaseAddress()
 		{
-			DWORD_PTR _baseModuleAddress = dwGetModuleBaseAddress(this->m_pid, helper::convertStringToTCHARPtr(m_baseModuleName)); //helper functions should be fixed
+			TCHAR* _wbaseModuleName = helper::convert(m_baseModuleName);
+			DWORD_PTR _baseModuleAddress = dwGetModuleBaseAddress(this->m_pid, _wbaseModuleName);
+			delete[] _wbaseModuleName; //should implement helper::convert as a functor with a destructor that deletes this
+
 			this->m_baseAddress.get()->setAddress(static_cast<DWORD_PTR>(_baseModuleAddress));
 			this->m_baseAddress.get()->setStatic(); //access to unique_ptr's Address value to be checked
 		}
@@ -113,10 +116,16 @@ namespace ghe
 
 		void log() override
 		{
-			static const char* processNameLogMessage = "process name: ";
+			/*static const char* processNameLogMessage = "process name: ";
 			static const char* pidLogMessage = "PID:";
 			static const char* baseAddressLogMessage = "base address:";
-			printf("%s %s\n %s %d\n %s %s\n", processNameLogMessage, this->m_programName, pidLogMessage, this->m_pid, baseAddressLogMessage, this->m_baseAddress->toString().c_str());
+			printf("%s %s\n %s %d\n %s %s\n", processNameLogMessage, this->m_programName, pidLogMessage, this->m_pid, baseAddressLogMessage, this->m_baseAddress->toString().c_str());*/
+
+			std::wcout << "game name: " << this->m_programName << std::endl;
+			std::cout  << "pid:" << this->m_pid << std::endl 
+			           << "hwnd:" << this->m_hwnd << std::endl
+			           << "hProcess:" << this->m_hProcess << std::endl
+				       << "base address: " << this->m_baseAddress->toString() << std::endl;
 		}
 
 	private:

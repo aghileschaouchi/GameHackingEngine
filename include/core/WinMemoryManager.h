@@ -35,7 +35,7 @@ namespace ghe
 			return ghe::Address(true, FindTheAddr(m_hProcess, pointerLevel, offsets, m_baseAddress, staticAddress, staticOffset));
 		}
 
-		inline A readAddressValue(const ghe::Address &address)
+		inline A readValue(const ghe::Address &address)
 		{
 			A value;
 			ReadProcessMemory(m_hProcess, (LPCVOID)address.getValue(), (LPVOID)&value, sizeof(value), NULL);

@@ -27,7 +27,7 @@ namespace ghe
 
 		std::string toString()
 		{
-			const std::string logMessage = (m_isStatic) ? "Static addres: " + m_address : "Dynamic address: " + m_address;
+			const std::string logMessage = (m_isStatic) ? "Static addres: " + std::to_string(m_address) : "Dynamic address: " + std::to_string(m_address);
 			return logMessage;
 		}
 
