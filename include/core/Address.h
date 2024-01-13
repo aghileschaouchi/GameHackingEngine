@@ -1,10 +1,5 @@
 #pragma once
 
-//use printf for the moment, should be replaced by Boost.Log
-#include <cstdio> 
-#include <string>
-#include <utility>
-
 #include <Windows.h>
 #include <TlHelp32.h>
 

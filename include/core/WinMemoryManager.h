@@ -4,7 +4,6 @@
 
 namespace
 {
-	TCHAR baseModuleName[13] = TEXT("somegame.exe");
 	DWORD FindTheAddr(HANDLE hProcess, int pointerLevel, DWORD offsets[], DWORD_PTR baseAddress, DWORD staticAddress, DWORD staticOffset)
 	{
 		DWORD tmp_addr = NULL;
