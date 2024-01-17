@@ -25,34 +25,13 @@ namespace
 namespace ghe
 {
 	template <typename P, typename A>
-	class WinMemoryManager
+	class WinMemoryManager //this class is not useful for the moment, methods has been moved to WinGame
 	{
 	public:
 
 		// SHOULD BE ISOLATED WITH A DESIGN PATTERN
-		inline ghe::Address getDynamicAddress(unsigned int pointerLevel, A* offsets, A staticAddress, A staticOffset) {
-			return ghe::Address(true, FindTheAddr(m_hProcess, pointerLevel, offsets, m_baseAddress, staticAddress, staticOffset));
-		}
-
-		inline A readValue(const ghe::Address &address)
-		{
-			A value;
-			ReadProcessMemory(m_hProcess, (LPCVOID)address.getValue(), (LPVOID)&value, sizeof(value), NULL);
-			return value;
-		}
-
-		inline bool writeValue(const ghe::Address& address, A& value)
-		{
-			if (WriteProcessMemory(hProcess, (LPVOID)address.getValue(), (LPCVOID)&value, sizeof(value), NULL) != 0)
-			{
-				return true;
-			}
-			//think about GetLastError 
-			return false;
-		}
-
-	protected:
-		P m_hProcess;
-		A m_Address;
+		//inline ghe::Address getDynamicAddress(unsigned int pointerLevel, A* offsets, A staticAddress, A staticOffset) {
+		//	return ghe::Address(true, FindTheAddr(m_hProcess, pointerLevel, offsets, m_baseAddress, staticAddress, staticOffset));
+		//}
 	};
 }

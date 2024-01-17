@@ -26,7 +26,7 @@ public:
 		std::move(baseAddress.get(), baseAddress.get() + 1, m_baseAddress.get());
 	}
 
-	const ghe::Address<A>* baseAddress() const { return m_baseAddress.get(); }
+	ghe::Address<A>* baseAddress() const { return m_baseAddress.get(); } //should return It const and handle It outside? It should return a ref & instead of pointer
 	const T pid() const { return m_pid; }
 	const std::string processName() const { return m_programName; }
 

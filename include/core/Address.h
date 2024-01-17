@@ -8,17 +8,17 @@
 namespace ghe
 {
 	template <typename A>
-	class Address
+	class Address //make It only moveable for assignement operators (no need for constructors since primitfs types)
 	{
 	public:
 		Address() : m_address(0x0), m_isStatic(FALSE) {}
 		Address(bool isStatic, A address) : m_address(address), m_isStatic(isStatic) {}
 		~Address() {}
 
-		void setAddress(const unsigned long address) { m_address = address; }
+		void setAddress(A address) { m_address = address; }
 		void setStatic() { m_isStatic = true; }
 
-		const A getValue() { return m_address; }
+		const A getAddress() { return m_address; }
 
 		std::string toString()
 		{
