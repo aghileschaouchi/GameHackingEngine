@@ -2,26 +2,6 @@
 
 #include "Address.h"
 
-namespace
-{
-	DWORD FindTheAddr(HANDLE hProcess, int pointerLevel, DWORD offsets[], DWORD_PTR baseAddress, DWORD staticAddress, DWORD staticOffset)
-	{
-		DWORD tmp_addr = NULL;
-		DWORD dynamicAddress = NULL;
-		ReadProcessMemory(hProcess, (LPCVOID)(baseAddress + staticOffset), (LPVOID)&staticAddress, sizeof(staticAddress), NULL);
-		dynamicAddress = staticAddress;
-		for (int i = 0; i < pointerLevel; i++)
-		{
-			dynamicAddress += offsets[i];
-			ReadProcessMemory(hProcess, (LPCVOID)(dynamicAddress), (LPVOID)&tmp_addr, sizeof(tmp_addr), NULL);
-			dynamicAddress = tmp_addr;
-		}
-		dynamicAddress += offsets[pointerLevel];
-
-		return dynamicAddress;
-	}
-}
-
 namespace ghe
 {
 	template <typename P, typename A>

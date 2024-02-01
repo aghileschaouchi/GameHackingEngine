@@ -137,6 +137,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\Address.h" />
+    <ClInclude Include="include\core\Pointer.h" />
     <ClInclude Include="include\core\WinGame.h" />
     <ClInclude Include="include\core\Program.h" />
     <ClInclude Include="include\core\Process.h" />

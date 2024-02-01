@@ -169,7 +169,7 @@ namespace ghe
 		}
 
 	private:
-		std::vector<ghe::Address<A>> m_addresses; //should be added to the constructors?
+		std::vector<ghe::Address<A>> m_addresses; //TO BE REMOVED!
 		std::string m_baseModuleName;
 	};
 }
