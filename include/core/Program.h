@@ -27,6 +27,7 @@ public:
 	}
 
 	ghe::Address<A>* baseAddress() const { return m_baseAddress.get(); } //should return It const and handle It outside? It should return a ref & instead of pointer
+	ghe::Address<A> baseAddressCopy() const { return ghe::Address(m_baseAddress.get()->isStatic(), m_baseAddress.get()->getAddress()) } //not efficient, think about It!
 	const T pid() const { return m_pid; }
 	const std::string processName() const { return m_programName; }
 

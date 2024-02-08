@@ -6,22 +6,7 @@
 
 namespace
 {
-	DWORD FindTheAddr(HANDLE hProcess, int pointerLevel, DWORD offsets[], DWORD_PTR baseAddress, DWORD staticAddress, DWORD staticOffset)
-	{
-		DWORD tmp_addr = NULL;
-		DWORD dynamicAddress = NULL;
-		ReadProcessMemory(hProcess, (LPCVOID)(baseAddress + staticOffset), (LPVOID)&staticAddress, sizeof(staticAddress), NULL);
-		dynamicAddress = staticAddress;
-		for (int i = 0; i < pointerLevel; i++)
-		{
-			dynamicAddress += offsets[i];
-			ReadProcessMemory(hProcess, (LPCVOID)(dynamicAddress), (LPVOID)&tmp_addr, sizeof(tmp_addr), NULL);
-			dynamicAddress = tmp_addr;
-		}
-		dynamicAddress += offsets[pointerLevel];
 
-		return dynamicAddress;
-	}
 }
 
 namespace ghe
@@ -38,7 +23,7 @@ namespace ghe
 		Pointer(std::unique_ptr<ghe::Address<A>>& baseAddress, std::vector<O>& offsets) = delete;
 		
 		//move
-		Pointer(ghe::Address<A>&& baseAddressContent, std::vector<O>&& offsets) : m_baseAddress(std::move(baseAddress)), m_offsets(std::move(offsets)) 
+		Pointer(ghe::Address<A>&& baseAddressContent, std::vector<O>&& offsets) : m_offsets(std::move(offsets))
 		{
 			m_baseAddress = std::make_unique<ghe::Address<A>>();
 			std::move(&baseAddressContent, &baseAddressContent + 1, m_baseAddress.get());
@@ -52,14 +37,41 @@ namespace ghe
 
 		//add move semantics methods (add them to WinGame also)
 
-		inline A pointedAddressValue()
+		const A pointedAddressValue() const
 		{
-
+			return m_baseAddress.get()->getAddress();
 		}
 
-		inline ghe::Address<A> pointedAddress()
+		ghe::Address<A>* pointedAddress() const
 		{
+			return m_baseAddress.get();
+		}
+		
+		ghe::Address<A> pointedAddress() const
+		{
+			return ghe::Address(m_baseAddress.get()->baseAddress(), m_baseAddress.get()->isStatic());
+		}
 
+		const std::vector<O>& offsets() const
+		{
+			return m_offsets;
+		}
+
+		template<typename A, typename O>
+		ghe::Address<A> finalAddress(HANDLE hProcess) //to be checked!
+		{
+			A tmp_addr = NULL;
+			A dynamicAddress = NULL;
+
+			for (size_t i = 0; i < m_offsets.size() - 1; ++i)
+			{
+				dynamicAddress += offsets[i];
+				ReadProcessMemory(hProcess, (LPCVOID)(dynamicAddress), (LPVOID)&tmp_addr, sizeof(tmp_addr), NULL);
+				dynamicAddress = tmp_addr;
+			}
+			dynamicAddress += offsets[m_offsets.size()];
+
+			return dynamicAddress;
 		}
 
 

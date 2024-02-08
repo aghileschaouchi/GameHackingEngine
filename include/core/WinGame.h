@@ -116,7 +116,19 @@ namespace ghe
 			}
 		}
 
-		inline V readValue(ghe::Address<A>& address) //should handle LVAL& and RVALUES
+		inline V readValue(const ghe::Address<A>& address)
+		{
+			V value;
+			if (ReadProcessMemory(m_hProcess, (LPCVOID)address.getAddress(), (LPVOID)&value, sizeof(value), NULL) == 0)
+			{
+				unsigned int codeError = GetLastError();
+				printf("readValue() exited with %ud as code error, check ReadProcessMemory call\n", codeError);
+				return 0;
+			}
+			return value;
+		}
+		
+		inline V readValue(ghe::Address<A>&& address) //should handle ONLY RVALUE REFS to enforce move semantics
 		{
 			V value;
 			if (ReadProcessMemory(m_hProcess, (LPCVOID)address.getAddress(), (LPVOID)&value, sizeof(value), NULL) == 0)
@@ -128,7 +140,18 @@ namespace ghe
 			return value;
 		}
 
-		inline bool writeValue(ghe::Address<A>& address, const V& value)
+		inline bool writeValue(const ghe::Address<A>& address, const V& value)
+		{
+			if (WriteProcessMemory(m_hProcess, (LPVOID)address.getAddress(), (LPCVOID)&value, sizeof(value), NULL) != 0)
+			{
+				return true;
+			}
+			unsigned int codeError = GetLastError();
+			printf("writeValue() exited with %ud as code error, check WriteProcessMemory call\n", codeError);
+			return false;
+		}
+		
+		inline bool writeValue(ghe::Address<A>&& address, const V& value)
 		{
 			if (WriteProcessMemory(m_hProcess, (LPVOID)address.getAddress(), (LPCVOID)&value, sizeof(value), NULL) != 0)
 			{

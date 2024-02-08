@@ -18,7 +18,8 @@ namespace ghe
 		void setAddress(A address) { m_address = address; }
 		void setStatic() { m_isStatic = true; }
 
-		const A getAddress() { return m_address; }
+		const A getAddress() const { return m_address; }
+		const bool isStatic() const { return m_isStatic; }
 
 		std::string toString()
 		{
