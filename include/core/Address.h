@@ -18,13 +18,18 @@ namespace ghe
 		void setAddress(A address) { m_address = address; }
 		void setStatic() { m_isStatic = true; }
 
-		const A getAddress() const { return m_address; }
+		A getAddress() const { return m_address; }
 		const bool isStatic() const { return m_isStatic; }
 
 		std::string toString()
 		{
 			const std::string logMessage = (m_isStatic) ? "Static addres: " + std::to_string(m_address) : "Dynamic address: " + std::to_string(m_address);
 			return logMessage;
+		}
+
+		void log()
+		{
+			printf("0x%08x\n", m_address);
 		}
 
 	private:

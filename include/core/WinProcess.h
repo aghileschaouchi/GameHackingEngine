@@ -26,6 +26,9 @@ namespace ghe
 
 		virtual ~WinProcess() {}
 
+		const P& hProcess() const { return m_hProcess; }
+		const H& hwnd() const { return m_hwnd; }
+
 	protected:
 		P m_hProcess;
 		H m_hwnd;

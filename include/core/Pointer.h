@@ -35,6 +35,12 @@ namespace ghe
 			std::move(baseAddress.get(), baseAddress.get() + 1, m_baseAddress.get());
 		}
 
+		//copying the baseAddress but moving the offsets
+		Pointer(ghe::Address<A>* baseAddress, std::vector<O>&& offsets) :m_offsets(std::move(offsets)) //this method is not working, check it later
+		{
+			m_baseAddress = std::make_unique<ghe::Address<A>>(baseAddress);
+		}
+
 		//add move semantics methods (add them to WinGame also)
 
 		const A pointedAddressValue() const
@@ -47,9 +53,9 @@ namespace ghe
 			return m_baseAddress.get();
 		}
 		
-		ghe::Address<A> pointedAddress() const
+		ghe::Address<A> pointedAddressCopy() const
 		{
-			return ghe::Address(m_baseAddress.get()->baseAddress(), m_baseAddress.get()->isStatic());
+			return ghe::Address<A>(m_baseAddress.get()->getAddress(), m_baseAddress.get()->isStatic());
 		}
 
 		const std::vector<O>& offsets() const
@@ -57,21 +63,20 @@ namespace ghe
 			return m_offsets;
 		}
 
-		template<typename A, typename O>
-		ghe::Address<A> finalAddress(HANDLE hProcess) //to be checked!
+		ghe::Address<A> finalAddress(const HANDLE& hProcess) //to be checked!
 		{
 			A tmp_addr = NULL;
-			A dynamicAddress = NULL;
+			A dynamicAddress = m_baseAddress.get()->getAddress();
 
 			for (size_t i = 0; i < m_offsets.size() - 1; ++i)
 			{
-				dynamicAddress += offsets[i];
+				dynamicAddress += m_offsets[i];
 				ReadProcessMemory(hProcess, (LPCVOID)(dynamicAddress), (LPVOID)&tmp_addr, sizeof(tmp_addr), NULL);
 				dynamicAddress = tmp_addr;
 			}
-			dynamicAddress += offsets[m_offsets.size()];
+			dynamicAddress += m_offsets[m_offsets.size() - 1];
 
-			return dynamicAddress;
+			return ghe::Address<A>(false, dynamicAddress);
 		}
 
 

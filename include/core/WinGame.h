@@ -116,7 +116,7 @@ namespace ghe
 			}
 		}
 
-		inline V readValue(const ghe::Address<A>& address)
+		inline V readValue(const ghe::Address<A>& address) //what if the address location in write only?
 		{
 			V value;
 			if (ReadProcessMemory(m_hProcess, (LPCVOID)address.getAddress(), (LPVOID)&value, sizeof(value), NULL) == 0)
@@ -140,7 +140,7 @@ namespace ghe
 			return value;
 		}
 
-		inline bool writeValue(const ghe::Address<A>& address, const V& value)
+		inline bool writeValue(const ghe::Address<A>& address, const V& value) //what if the address location is read only?
 		{
 			if (WriteProcessMemory(m_hProcess, (LPVOID)address.getAddress(), (LPCVOID)&value, sizeof(value), NULL) != 0)
 			{
@@ -187,8 +187,9 @@ namespace ghe
 			static const char* hwndMessage = "hwnd:"; //%p
 			static const char* hProcessMessage = "hProcess:"; //%p
 			static const char* baseAddressMessage = "base address:"; //%s
-			printf("%s %s\n %s %s\n %s %ld\n %s %p\n %s %p\n %s %s\n", processNameMessage, this->m_programName.c_str(), baseModuleNameMessage, this->m_baseModuleName.c_str(), pidMessage, this->m_pid,
-																		hwndMessage, this->m_hwnd, hProcessMessage, this->m_hProcess, baseAddressMessage, this->m_baseAddress->toString().c_str());
+			printf("%s %s\n %s %s\n %s %ld\n %s %p\n %s %p\n %s ", processNameMessage, this->m_programName.c_str(), baseModuleNameMessage, this->m_baseModuleName.c_str(), pidMessage, this->m_pid,
+																		hwndMessage, this->m_hwnd, hProcessMessage, this->m_hProcess, baseAddressMessage);
+			this->m_baseAddress->log();
 		}
 
 	private:

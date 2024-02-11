@@ -75,9 +75,6 @@
     <ClInclude Include="include\core\WinProcess.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="include\core\WinMemoryManager.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
     <ClInclude Include="include\core\Pointer.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
