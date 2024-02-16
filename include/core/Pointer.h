@@ -48,14 +48,22 @@ namespace ghe
 			return m_baseAddress.get()->getAddress();
 		}
 
-		ghe::Address<A>* pointedAddress() const
+		inline ghe::Address<A>* pointedAddress() const
 		{
 			return m_baseAddress.get();
 		}
 		
-		ghe::Address<A> pointedAddressCopy() const
+		inline ghe::Address<A> pointedAddressCopy() const
 		{
 			return ghe::Address<A>(m_baseAddress.get()->getAddress(), m_baseAddress.get()->isStatic());
+		}
+
+		inline ghe::Address<A>& baseAddressDeref() const //alwyas prefer to use this one
+		{
+			if (m_baseAddress)
+			{
+				return *m_baseAddress.get();
+			}
 		}
 
 		const std::vector<O>& offsets() const
@@ -63,10 +71,10 @@ namespace ghe
 			return m_offsets;
 		}
 
-		ghe::Address<A> finalAddress(const HANDLE& hProcess) //to be checked!
+		ghe::Address<A> dynamicAddress(const HANDLE& hProcess)
 		{
 			A tmp_addr = NULL;
-			A dynamicAddress = m_baseAddress.get()->getAddress();
+			A dynamicAddress = m_baseAddress.get()->value();
 
 			for (size_t i = 0; i < m_offsets.size() - 1; ++i)
 			{

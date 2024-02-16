@@ -26,8 +26,15 @@ public:
 		std::move(baseAddress.get(), baseAddress.get() + 1, m_baseAddress.get());
 	}
 
-	ghe::Address<A>* baseAddress() const { return m_baseAddress.get(); } //should return It const and handle It outside? It should return a ref & instead of pointer
-	ghe::Address<A> baseAddressCopy() const { return ghe::Address<A>(m_baseAddress.get()->isStatic(), m_baseAddress.get()->getAddress()); } //not efficient, think about It!
+	inline ghe::Address<A>* baseAddress() const { return m_baseAddress.get(); } //should return It const and handle It outside? It should return a ref & instead of pointer
+	inline ghe::Address<A> baseAddressCopy() const { return ghe::Address<A>(m_baseAddress.get()->isStatic(), m_baseAddress.get()->value()); } //not efficient, think about It!
+	inline ghe::Address<A>& baseAddressDeref() const //alwyas prefer to use this one
+	{
+		if (m_baseAddress)
+		{
+			return *m_baseAddress.get();
+		}
+	}
 	const T& pid() const { return m_pid; }
 	const std::string& processName() const { return m_programName; }
 

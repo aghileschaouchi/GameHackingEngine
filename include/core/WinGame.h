@@ -50,10 +50,6 @@ namespace ghe
 		WinGame(std::unique_ptr<ghe::Address<A>>&& baseAddress, T&& pid, std::string&& programName, P&& hProcess, H&& hwnd, std::string&& baseModuleName) :
 			WinProcess<T, P, H, A>(std::move(baseAddress), std::forward<T>(pid), std::move(programName),
 				std::forward<P>(hProcess), std::forward<H>(hwnd)), m_baseModuleName(std::move(baseModuleName)) {
-			if (m_addresses.empty())
-			{
-				m_addresses.reserve(AC);
-			}
 			setupHwnd();
 			setupPid();
 			setupHProcess();
@@ -64,10 +60,6 @@ namespace ghe
 		WinGame(ghe::Address<A>&& baseAddressContent, T&& pid, std::string&& programName, P&& hProcess, H&& hwnd, std::string&& baseModuleName) :
 			WinProcess<T, P, H, A>(std::move(baseAddressContent), std::forward<T>(pid), std::move(programName),
 				std::forward<P>(hProcess), std::forward<H>(hwnd)), m_baseModuleName(std::move(baseModuleName)) {
-			if (m_addresses.empty())
-			{
-				m_addresses.reserve(AC);
-			}
 			setupHwnd();
 			setupPid();
 			setupHProcess();
@@ -118,31 +110,31 @@ namespace ghe
 
 		inline V readValue(const ghe::Address<A>& address) //what if the address location in write only?
 		{
-			V value;
-			if (ReadProcessMemory(m_hProcess, (LPCVOID)address.getAddress(), (LPVOID)&value, sizeof(value), NULL) == 0)
+			V pointedValue;
+			if (ReadProcessMemory(m_hProcess, (LPCVOID)address.value(), (LPVOID)&pointedValue, sizeof(pointedValue), NULL) == 0)
 			{
 				unsigned int codeError = GetLastError();
 				printf("readValue() exited with %ud as code error, check ReadProcessMemory call\n", codeError);
 				return 0;
 			}
-			return value;
+			return pointedValue;
 		}
 		
 		inline V readValue(ghe::Address<A>&& address) //should handle ONLY RVALUE REFS to enforce move semantics
-		{
-			V value;
-			if (ReadProcessMemory(m_hProcess, (LPCVOID)address.getAddress(), (LPVOID)&value, sizeof(value), NULL) == 0)
+		{ //what if the address location is write only?
+			V pointedValue;
+			if (ReadProcessMemory(m_hProcess, (LPCVOID)address.value(), (LPVOID)&pointedValue, sizeof(pointedValue), NULL) == 0)
 			{
 				unsigned int codeError = GetLastError();
 				printf("readValue() exited with %ud as code error, check ReadProcessMemory call\n", codeError);
 				return 0;
 			}
-			return value;
+			return pointedValue;
 		}
 
-		inline bool writeValue(const ghe::Address<A>& address, const V& value) //what if the address location is read only?
+		inline bool writeValue(const ghe::Address<A>& address, const V& pointedValue) //what if the address location is read only?
 		{
-			if (WriteProcessMemory(m_hProcess, (LPVOID)address.getAddress(), (LPCVOID)&value, sizeof(value), NULL) != 0)
+			if (WriteProcessMemory(m_hProcess, (LPVOID)address.value(), (LPCVOID)&pointedValue, sizeof(pointedValue), NULL) != 0)
 			{
 				return true;
 			}
@@ -151,9 +143,9 @@ namespace ghe
 			return false;
 		}
 		
-		inline bool writeValue(ghe::Address<A>&& address, const V& value)
+		inline bool writeValue(ghe::Address<A>&& address, const V& pointedValue) //what if the address location is read only?
 		{
-			if (WriteProcessMemory(m_hProcess, (LPVOID)address.getAddress(), (LPCVOID)&value, sizeof(value), NULL) != 0)
+			if (WriteProcessMemory(m_hProcess, (LPVOID)address.value(), (LPCVOID)&pointedValue, sizeof(pointedValue), NULL) != 0)
 			{
 				return true;
 			}
@@ -193,7 +185,6 @@ namespace ghe
 		}
 
 	private:
-		std::vector<ghe::Address<A>> m_addresses; //TO BE REMOVED!
 		std::string m_baseModuleName;
 	};
 }
