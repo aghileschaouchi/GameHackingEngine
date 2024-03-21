@@ -11,4 +11,9 @@
 
 ## Prerequisite:
 1. add kernel32.lib to the linker's inputs
-2. install and add msctf.lib 
+2. install and add msctf.lib
+
+## Configuration:
+Do not forget this step:
+![Admin rights](simples\\configuration_1.png)
+Do eat for both GHE and the testing project in visual studio.

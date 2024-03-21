@@ -40,6 +40,9 @@
     <Filter Include="tests\include\catch2">
       <UniqueIdentifier>{ca17f5f9-d00b-4edf-b4e2-744e3e987f80}</UniqueIdentifier>
     </Filter>
+    <Filter Include="simples">
+      <UniqueIdentifier>{4b25681b-1465-4bad-b943-57332f66c31e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
@@ -87,5 +90,10 @@
     <Text Include="tests\CMakeLists.txt">
       <Filter>tests</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="simples\configuration_1.png">
+      <Filter>simples</Filter>
+    </Image>
   </ItemGroup>
 </Project>
