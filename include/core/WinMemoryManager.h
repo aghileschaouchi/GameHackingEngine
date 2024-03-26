@@ -159,6 +159,6 @@ namespace ghe
 		}
 
 	private:
-		P* m_hProcessPtr;
+		P* m_hProcessPtr = nullptr;
 	};
 }

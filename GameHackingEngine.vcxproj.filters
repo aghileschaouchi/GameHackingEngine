@@ -84,6 +84,12 @@
     <ClInclude Include="include\core\WinMemoryManager.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
+    <ClInclude Include="include\core\DllInjector.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\Injector.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />
