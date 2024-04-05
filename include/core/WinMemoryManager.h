@@ -34,7 +34,7 @@ namespace ghe
 			}
 			PB _protectionBackup;
 
-			if (VirtualProtectEx(*m_hProcessPtr, (LPVOID)address.value(), sizeof(V), PAGE_EXECUTE_READWRITE, &_protectionBackup) == 0)
+			if (VirtualProtectEx(*m_hProcessPtr, (LPVOID)address.value(), sizeof(V), PAGE_EXECUTE_READWRITE, &_protectionBackup) == NULL)
 			{
 				unsigned int codeError = GetLastError();
 				printf("unlock() exited with %ud as code error, check VirtualProtectEx call 1\n", codeError);
@@ -51,7 +51,7 @@ namespace ghe
 				return false;
 			}
 
-			if (VirtualProtectEx(*m_hProcessPtr, (LPVOID)address.value(), sizeof(V), protectionBackup, NULL) == 0)
+			if (VirtualProtectEx(*m_hProcessPtr, (LPVOID)address.value(), sizeof(V), protectionBackup, NULL) == NULL)
 			{
 				unsigned int codeError = GetLastError();
 				printf("restore() exited with %ud as code error, check VirtualProtectEx call\n", codeError);

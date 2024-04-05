@@ -20,14 +20,14 @@ namespace ghe
 		//move
 		WinProcess(std::unique_ptr<ghe::Address<A>>&& baseAddress, T&& pid, std::string&& programName, P&& hProcess, H&& hwnd) :
 			Process<T, A>(std::move(baseAddress), std::forward<T>(pid), std::move(programName)), m_hProcess(std::move(hProcess)), m_hwnd(std::move(hwnd)) {}
-		
+
 		WinProcess(ghe::Address<A>&& baseAddressContent, T&& pid, std::string&& programName, P&& hProcess, H&& hwnd) :
 			Process<T, A>(std::move(baseAddressContent), std::forward<T>(pid), std::move(programName)), m_hProcess(std::move(hProcess)), m_hwnd(std::move(hwnd)) {}
 
 		virtual ~WinProcess() {}
 
 		P& hProcess() { return m_hProcess; }
-		const H& hwnd() const { return m_hwnd; }
+		H& hwnd() { return m_hwnd; }
 
 	protected:
 		P m_hProcess;

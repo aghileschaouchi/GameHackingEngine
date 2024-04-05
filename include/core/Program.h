@@ -35,7 +35,7 @@ public:
 			return *m_baseAddress.get();
 		}
 	}
-	const T& pid() const { return m_pid; }
+	T& pid() { return m_pid; }
 	const std::string& processName() const { return m_programName; }
 
 	void setBaseAddress(const std::unique_ptr<ghe::Address<A>>& baseAddress) { this->m_baseAddress = std::make_unique<ghe::Address<A>>(*baseAddress); }

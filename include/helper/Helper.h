@@ -7,6 +7,18 @@
 
 namespace helper
 {
+	template<typename A>
+	void debugMessageBox(const std::string& messsage, A address)
+	{
+		std::string _message(messsage + std::to_string(address));
+		int msgboxID = MessageBoxA(
+			NULL,
+			reinterpret_cast<LPCSTR>(_message.c_str()),
+			reinterpret_cast <LPCSTR>(L""),
+			MB_ICONWARNING
+		);
+	}
+
 	std::wstring s2ws(const std::string& string, bool isUTF8 = true)
 	{
 		int wslength;
