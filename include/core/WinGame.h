@@ -47,7 +47,7 @@ namespace ghe
 
 		inline void setupBaseAddress()
 		{
-			
+
 			DWORD_PTR _baseModuleAddress = m_memoryManager.moduleBaseAddress(this->m_pid, m_baseModuleName);
 			this->m_baseAddress.get()->setAddress(static_cast<DWORD_PTR>(_baseModuleAddress));
 			this->m_baseAddress.get()->setStatic(); //access to unique_ptr's Address value to be checked
@@ -55,11 +55,10 @@ namespace ghe
 
 		inline void setupHwnd()
 		{
-			this->m_hwnd = FindWindow(NULL, helper::constConvert(this->m_programName));
+			this->m_hwnd = FindWindowA(NULL, this->m_programName.c_str());
 			if (this->m_hwnd == NULL)
 			{
-				unsigned int codeError = GetLastError();
-				printf("setupHwnd() exited with %ud as code error, check FindWindow call\n", codeError);
+				printf("setupHwnd() exited with %ud as code error, check FindWindow call\n", GetLastError());
 			}
 		}
 
@@ -67,8 +66,7 @@ namespace ghe
 		{
 			if (GetWindowThreadProcessId(this->m_hwnd, &this->m_pid) == 0)
 			{
-				unsigned int codeError = GetLastError();
-				printf("setupPid() exited with %ud as code error, check GetWindowThreadProcessId call\n", codeError);
+				printf("setupPid() exited with %ud as code error, check GetWindowThreadProcessId call\n", GetLastError());
 			}
 		}
 
@@ -77,8 +75,7 @@ namespace ghe
 			this->m_hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, this->m_pid);
 			if (this->m_hProcess == NULL)
 			{
-				unsigned int codeError = GetLastError();
-				printf("setupHProcess() exited with %ud as code error, check OpenProcess call\n", codeError);
+				printf("setupHProcess() exited with %ud as code error, check OpenProcess call\n", GetLastError());
 			}
 		}
 

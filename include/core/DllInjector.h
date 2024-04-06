@@ -1,10 +1,19 @@
 #pragma once
 
 #include <cstdio>
+#include <memory>
+
+#include <fileapi.h>
 #include <Windows.h>
+#include <WinBase.h>
 #include <TlHelp32.h>
+#include <Psapi.h>
+#include <Shlwapi.h>
 
 #include "Injector.h"
+
+#pragma comment(lib, "Psapi.lib")
+#pragma comment(lib, "Shlwapi.lib")
 
 namespace ghe
 {
@@ -12,62 +21,79 @@ namespace ghe
 	class DllInjector : public Injector
 	{
 	public:
-		DllInjector(T* pidPtr, H* hProcessPtr, const std::string& dllPath, const std::string& gameName) : m_pidPtr(pidPtr), m_hProcessPtr(hProcessPtr),
+		DllInjector(std::weak_ptr<H> hProcessPtr, const std::string& dllPath, const std::string& gameName) : m_hProcessPtr(hProcessPtr),
 			m_dllPath(dllPath), m_gameName(gameName), m_injectionLocation(nullptr) {}
-		DllInjector(T* pidPtr, H* hProcessPtr, std::string&& dllPath, std::string&& gameName) = delete;
+
+		DllInjector(std::weak_ptr<H> hProcessPtr, std::string&& dllPath, std::string&& gameName) = delete;
+
 		~DllInjector() override
 		{
 			if (m_injectionLocation != nullptr)
 			{
-				VirtualFreeEx(*m_hProcessPtr, m_injectionLocation, MAX_PATH, MEM_FREE);
+				if (auto&& _lockedHProcessPtr = m_hProcessPtr.lock())
+				{
+					VirtualFreeEx(*_lockedHProcessPtr, m_injectionLocation, static_cast<size_t>(m_maxInjectionPath), MEM_FREE);
+				}
+				m_injectionLocation = nullptr;
 			}
-			m_injectionLocation = nullptr;
-			m_pidPtr = nullptr;
-			m_hProcessPtr = nullptr;
 		}
 
 		DllInjector& operator=(const DllInjector& other) = delete;
 		DllInjector& operator=(DllInjector&& other) = delete;
 
+		inline bool isDllPathInvalid()
+		{
+			DWORD result = GetFileAttributesA(m_dllPath.c_str());
+			return (result == INVALID_FILE_ATTRIBUTES || (result & FILE_ATTRIBUTE_DIRECTORY));
+		}
+
 		inline bool copyDllPathToGame()
 		{
-			m_injectionLocation = VirtualAllocEx(*m_hProcessPtr, 0, MAX_PATH, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-			if (m_injectionLocation != NULL)
+			if (auto&& _lockedHProcessPtr = m_hProcessPtr.lock())
 			{
-				if (WriteProcessMemory(*m_hProcessPtr, m_injectionLocation, m_dllPath.c_str(), m_dllPath.length() + 1, 0) == 0)
+				m_injectionLocation = VirtualAllocEx(*_lockedHProcessPtr, 0, static_cast<size_t>(m_maxInjectionPath), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+				if (m_injectionLocation != NULL)
 				{
-					unsigned int codeError = GetLastError();
-					printf("copyDllPathToGame() exited with %ud as code error, check WriteProcessMemory call\n", codeError);
-					return false;
+					if (WriteProcessMemory(*_lockedHProcessPtr, m_injectionLocation, m_dllPath.c_str(), static_cast<size_t>(m_maxInjectionPath / 2), nullptr) == false)
+					{
+						printf("copyDllPathToGame() exited with %ud as code error, check WriteProcessMemory call\n", GetLastError());
+						return false;
+					}
+					return true;
 				}
-				return true;
+				printf("copyDllPathToGame() exited with %ud as code error, check VirtualAllocEx call\n", GetLastError());
+				return false;
 			}
-			unsigned int codeError = GetLastError();
-			printf("copyDllPathToGame() exited with %ud as code error, check VirtualAllocEx call\n", codeError);
+			printf("copyDllPathToGame() exited because there is an issue with its hProcess, check its lifetime!\n");
 			return false;
 		}
 
 		inline P createThread()
 		{
-			P _thread = CreateRemoteThread(*m_hProcessPtr, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(LoadLibraryA),
-				m_injectionLocation, 0, nullptr);
-			if (_thread == nullptr)
+			if (auto&& _lockedHProcessPtr = m_hProcessPtr.lock())
 			{
-				CloseHandle(_thread);
-				unsigned int codeError = GetLastError();
-				printf("createThread() exited with %ud as code error, check CreateRemoteThread call\n", codeError);
-				return 0;
+				FARPROC _loadLibraryAddress = GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
+				P _thread = CreateRemoteThread(*_lockedHProcessPtr, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(_loadLibraryAddress),
+					m_injectionLocation, 0, nullptr);
+				if (_thread == nullptr)
+				{
+					CloseHandle(_thread);
+					printf("createThread() exited with %ud as code error, check CreateRemoteThread call\n", GetLastError());
+					return nullptr;
+				}
+				return _thread;
 			}
-			return _thread;
+			printf("createThread() exited because there is an issue with its hProcess, check its lifetime!\n");
+			return nullptr;
 		}
 
-		inline bool checkTimeOut(P& thread)
+		inline bool reachedTimeOut(P& thread)
 		{
 			if (WaitForSingleObject(thread, m_timeOut) == WAIT_TIMEOUT)
 			{
 				CloseHandle(thread);
-				unsigned int codeError = GetLastError();
-				printf("checkTimeOut() exited with %ud as code error, check WaitForSingleObject call (time out)\n", codeError);
+				printf("checkTimeOut() exited with %ud as code error, check WaitForSingleObject call (time out)\n", GetLastError());
 				return true;
 			}
 			CloseHandle(thread);
@@ -76,29 +102,59 @@ namespace ghe
 
 		bool inject() override
 		{
-			if (*m_hProcessPtr && *m_hProcessPtr != INVALID_HANDLE_VALUE)
+			if (isDllPathInvalid())
 			{
-				copyDllPathToGame();
-				P _thread = createThread();
-				return !checkTimeOut(_thread);
+				printf("inject() failed because the dll's path is invalid!\n");
+				return false;
 			}
+			//debug
+			printf("injecting %s... the dll path is correct!\n", m_dllPath.c_str());
+
+			if (auto&& _lockedHProcessPtr = m_hProcessPtr.lock())
+			{
+				if (*_lockedHProcessPtr != INVALID_HANDLE_VALUE)
+				{
+					if (!copyDllPathToGame())
+					{
+						printf("inject() exited because copyDllPathToGame() failed!\n");
+						return false;
+					}
+
+					P _thread = createThread();
+					if (_thread == nullptr)
+					{
+						printf("inject() exited because createThread() failed!\n");
+						return false;
+					}
+
+					return !reachedTimeOut(_thread);
+				}
+				printf("inject() exited because there is an issue with its hProcess, check its validity!\n");
+				return false;
+			}
+			printf("inject() exited because there is an issue with its hProcess, check its lifetime!\n");
+			return false;
 		}
 
 		void log() override
 		{
-			static const char* pidMsg = "injecting into process: "; //%ld
-			static const char* hProcessMsg = "hProecess: "; //%p
+			static const char* hProcessMsg = "injecting into process hProecess: "; //%p
 			static const char* dllPathMsg = "dll path: "; //%s
 			static const char* gameNameMsg = "game name: ";
-			printf("%s %ld\n %s %p\n %s %s\n %s %s\n", pidMsg, *m_pidPtr, hProcessMsg, *m_hProcessPtr, dllPathMsg, m_dllPath.c_str(),
-				gameNameMsg, m_gameName.c_str());
+			if (auto&& _lockedHProcessPtr = m_hProcessPtr.lock())
+			{
+				printf("%s %p\n %s %s\n %s %s\n", hProcessMsg, *_lockedHProcessPtr, dllPathMsg, m_dllPath.c_str(),
+					gameNameMsg, m_gameName.c_str());
+				return;
+			}
+			printf("log() exited because there is an issue with its hProcess, check its lifetime!\n");
 		}
 
 	private:
-		static const UINT8 m_timeOut = 1000;
+		static const UINT16 m_timeOut = 1000;
+		static const UINT16 m_maxInjectionPath = 520;
 		void* m_injectionLocation;
-		T* m_pidPtr;
-		H* m_hProcessPtr;
+		std::weak_ptr<H> m_hProcessPtr;
 		std::string m_dllPath;
 		std::string m_gameName;
 	};

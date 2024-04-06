@@ -10,7 +10,7 @@ namespace helper
 	template<typename A>
 	void debugMessageBox(const std::string& messsage, A address)
 	{
-		std::string _message(messsage + std::to_string(address));
+		std::string _message(messsage + ": " + std::to_string(address));
 		int msgboxID = MessageBoxA(
 			NULL,
 			reinterpret_cast<LPCSTR>(_message.c_str()),
@@ -40,27 +40,6 @@ namespace helper
 			result = wrapper.c_str();
 		}
 		return result;
-	}
-
-	TCHAR* convert(const std::string& string, bool isUTF8 = true)
-	{
-		wchar_t* result = NULL;
-		if (string.size() != 0)
-		{
-			int length = MultiByteToWideChar((isUTF8) ? CP_UTF8 : CP_ACP, 0, string.c_str(), string.length(), NULL, 0);
-			result = new wchar_t[length];
-			MultiByteToWideChar(CP_UTF8, 0, string.c_str(), string.length(), result, length);
-		}
-		return result; //should be deleted outisde!!!
-	}
-
-	namespace functors
-	{
-		//struct stringToTcharP
-		//{
-
-		//	stringToTcharP()
-		//};
 	}
 }
 

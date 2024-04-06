@@ -18,7 +18,7 @@ namespace ghe
 		MODULEINFO getModuleInfo(const std::string& module)
 		{
 			MODULEINFO _moduleInfo = { 0 };
-			HMODULE _hModule = GetModuleHandle(helper::constConvert(module));
+			HMODULE _hModule = GetModuleHandleA(module.c_str());
 			if (_hModule != 0)
 			{
 				GetModuleInformation(GetCurrentProcess(), _hModule, &_moduleInfo, sizeof(MODULEINFO));
@@ -58,7 +58,7 @@ namespace ghe
 		{
 			MODULEINFO _moduleInfo = getModuleInfo(module);
 			DWORD size = static_cast<DWORD>(_moduleInfo.SizeOfImage);
-			DWORD base = reinterpret_cast<DWORD>(_moduleInfo.lpBaseOfDll); //replace by LPVOID and handle it in the DLL
+			DWORD base = reinterpret_cast<DWORD>(_moduleInfo.lpBaseOfDll);
 
 			for (DWORD i = 0; i < size - mask.length(); ++i)
 			{

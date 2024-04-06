@@ -36,8 +36,7 @@ namespace ghe
 
 			if (VirtualProtectEx(*m_hProcessPtr, (LPVOID)address.value(), sizeof(V), PAGE_EXECUTE_READWRITE, &_protectionBackup) == NULL)
 			{
-				unsigned int codeError = GetLastError();
-				printf("unlock() exited with %ud as code error, check VirtualProtectEx call 1\n", codeError);
+				printf("unlock() exited with %ud as code error, check VirtualProtectEx call 1\n", GetLastError());
 				return 0;
 			}
 			return _protectionBackup;
@@ -53,8 +52,7 @@ namespace ghe
 
 			if (VirtualProtectEx(*m_hProcessPtr, (LPVOID)address.value(), sizeof(V), protectionBackup, NULL) == NULL)
 			{
-				unsigned int codeError = GetLastError();
-				printf("restore() exited with %ud as code error, check VirtualProtectEx call\n", codeError);
+				printf("restore() exited with %ud as code error, check VirtualProtectEx call\n", GetLastError());
 				return false;
 			}
 			return true;
@@ -78,8 +76,7 @@ namespace ghe
 
 			if (ReadProcessMemory(*m_hProcessPtr, (LPCVOID)address.value(), (LPVOID)&pointedValue, sizeof(pointedValue), NULL) == 0)
 			{
-				unsigned int codeError = GetLastError();
-				printf("readValue() exited with %ud as code error, check ReadProcessMemory call\n", codeError);
+				printf("readValue() exited with %ud as code error, check ReadProcessMemory call\n", GetLastError());
 				return 0;
 			}
 
@@ -110,8 +107,7 @@ namespace ghe
 
 			if (WriteProcessMemory(*m_hProcessPtr, (LPVOID)address.value(), (LPCVOID)&pointedValue, sizeof(pointedValue), NULL) == 0)
 			{
-				unsigned int codeError = GetLastError();
-				printf("writeValue() exited with %ud as code error, check WriteProcessMemory call\n", codeError);
+				printf("writeValue() exited with %ud as code error, check WriteProcessMemory call\n", GetLastError());
 				return false;
 			}
 
@@ -126,16 +122,14 @@ namespace ghe
 			return true;
 		}
 
-		A moduleBaseAddress(T processIdentifier, std::string moduleName)
+		A moduleBaseAddress(T processIdentifier, const std::string& moduleName)
 		{
-			TCHAR* _wbaseModuleName = helper::convert(moduleName);
 			A moduleBaseAddress = 0;
 			HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, processIdentifier);
 
 			if (hSnapshot == INVALID_HANDLE_VALUE)
 			{
-				unsigned int codeError = GetLastError();
-				printf("moduleBaseAddress() exited with %ud as code error, check CreateToolhelp32Snapshot call\n", codeError);
+				printf("moduleBaseAddress() exited with %ud as code error, check CreateToolhelp32Snapshot call\n", GetLastError());
 				return moduleBaseAddress;
 			}
 
@@ -145,7 +139,7 @@ namespace ghe
 			{
 				do
 				{
-					if (_tcscmp(ModuleEntry32.szModule, helper::convert(moduleName)) == 0)
+					if (_tcscmp(ModuleEntry32.szModule, moduleName.c_str()) == 0)
 					{
 						moduleBaseAddress = (DWORD_PTR)ModuleEntry32.modBaseAddr;
 						break;
@@ -153,12 +147,10 @@ namespace ghe
 				} while (Module32Next(hSnapshot, &ModuleEntry32));
 			}
 			CloseHandle(hSnapshot);
-			delete[] _wbaseModuleName; //should implement helper::convert as a functor with a destructor that deletes this
-			_wbaseModuleName = NULL;
 			return moduleBaseAddress;
 		}
 
 	private:
-		P* m_hProcessPtr = nullptr;
+		P* m_hProcessPtr = nullptr; //implement an std::weak_ptr<P>
 	};
 }
