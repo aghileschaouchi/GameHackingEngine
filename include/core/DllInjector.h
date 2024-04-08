@@ -21,10 +21,10 @@ namespace ghe
 	class DllInjector : public Injector
 	{
 	public:
-		DllInjector(std::weak_ptr<H> hProcessPtr, const std::string& dllPath, const std::string& gameName) : m_hProcessPtr(hProcessPtr),
+		DllInjector(std::weak_ptr<H>& hProcessPtr, const std::string& dllPath, const std::string& gameName) : m_hProcessPtr(hProcessPtr),
 			m_dllPath(dllPath), m_gameName(gameName), m_injectionLocation(nullptr) {}
 
-		DllInjector(std::weak_ptr<H> hProcessPtr, std::string&& dllPath, std::string&& gameName) = delete;
+		DllInjector(std::weak_ptr<H>& hProcessPtr, std::string&& dllPath, std::string&& gameName) = delete;
 
 		~DllInjector() override
 		{

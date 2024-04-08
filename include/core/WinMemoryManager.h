@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include <Windows.h>
 #include <TlHelp32.h>
 #include <Memoryapi.h>
@@ -13,14 +15,13 @@ namespace ghe
 	class WinMemoryManager
 	{
 	public:
-		WinMemoryManager() : m_hProcessPtr(nullptr) {}
-		WinMemoryManager(P* hProcessPtr) : m_hProcessPtr(hProcessPtr) {}
+		WinMemoryManager() {}
+		WinMemoryManager(std::weak_ptr<P>& hProcessPtr) : m_hProcessPtr(hProcessPtr) {}
 		~WinMemoryManager()
 		{
-			m_hProcessPtr = nullptr;
 		}
 
-		void setHProcess(P* hProcessPtr)
+		void setHProcess(std::weak_ptr<P>& hProcessPtr)
 		{
 			m_hProcessPtr = hProcessPtr;
 		}
@@ -28,98 +29,106 @@ namespace ghe
 		template <typename V>
 		inline PB unlock(const ghe::Address<A>& address, const V& pointedValue)
 		{
-			if (m_hProcessPtr == nullptr)
+			if (auto&& _lockedHProcessPtr = m_hProcessPtr.lock())
 			{
-				return 0;
-			}
-			PB _protectionBackup;
+				PB _protectionBackup;
 
-			if (VirtualProtectEx(*m_hProcessPtr, (LPVOID)address.value(), sizeof(V), PAGE_EXECUTE_READWRITE, &_protectionBackup) == NULL)
-			{
-				printf("unlock() exited with %ud as code error, check VirtualProtectEx call 1\n", GetLastError());
-				return 0;
+				if (VirtualProtectEx(*_lockedHProcessPtr, reinterpret_cast<LPVOID>(address.value()), sizeof(V), PAGE_EXECUTE_READWRITE,
+					&_protectionBackup) == FALSE)
+				{
+					printf("unlock() exited with %ud as code error, check VirtualProtectEx call 1\n", GetLastError());
+					return 0;
+				}
+				return _protectionBackup;
 			}
-			return _protectionBackup;
+			printf("unlock() exited because there is an issue with its hProcess, check its lifetime!\n");
 		}
 
 		template <typename V>
 		inline bool restore(const ghe::Address<A>& address, const V& pointedValue, PB protectionBackup)
 		{
-			if (m_hProcessPtr == nullptr || protectionBackup == 0)
+			if (protectionBackup == 0)
 			{
+				printf("restore() exited because protectionBackup=0\n");
 				return false;
 			}
-
-			if (VirtualProtectEx(*m_hProcessPtr, (LPVOID)address.value(), sizeof(V), protectionBackup, NULL) == NULL)
+			if (auto&& _lockedHProcessPtr = m_hProcessPtr.lock())
 			{
-				printf("restore() exited with %ud as code error, check VirtualProtectEx call\n", GetLastError());
-				return false;
+				if (VirtualProtectEx(*_lockedHProcessPtr, reinterpret_cast<LPVOID>(address.value()), sizeof(V), protectionBackup, NULL) == FALSE)
+				{
+					printf("restore() exited with %ud as code error, check VirtualProtectEx call\n", GetLastError());
+					return false;
+				}
+				return true;
 			}
-			return true;
+			printf("restore() exited because there is an issue with its hProcess, check its lifetime!\n");
+			return false;
 		}
 
 		template <typename V, bool UNLOCK = false>
 		inline V readValue(const ghe::Address<A>& address)
 		{
-			if (m_hProcessPtr == nullptr)
+			if (auto&& _lockedHProcessPtr = m_hProcessPtr.lock())
 			{
-				return 0;
-			}
+				V pointedValue;
 
-			V pointedValue;
-
-			PB protectionBackup;
-			if constexpr (UNLOCK)
-			{
-				protectionBackup = unlock<V>(address, pointedValue);
-			}
-
-			if (ReadProcessMemory(*m_hProcessPtr, (LPCVOID)address.value(), (LPVOID)&pointedValue, sizeof(pointedValue), NULL) == 0)
-			{
-				printf("readValue() exited with %ud as code error, check ReadProcessMemory call\n", GetLastError());
-				return 0;
-			}
-
-			if constexpr (UNLOCK)
-			{
-				if (restore<V>(address, pointedValue, protectionBackup))
+				PB protectionBackup;
+				if constexpr (UNLOCK)
 				{
-					return pointedValue;
+					protectionBackup = unlock<V>(address, pointedValue);
 				}
-				return 0;
+
+				if (ReadProcessMemory(*_lockedHProcessPtr, reinterpret_cast<LPCVOID>(address.value()), reinterpret_cast<LPVOID>(&pointedValue),
+					sizeof(pointedValue), NULL) == FALSE)
+				{
+					printf("readValue() exited with %ud as code error, check ReadProcessMemory call\n", GetLastError());
+					return 0;
+				}
+
+				if constexpr (UNLOCK)
+				{
+					if (restore<V>(address, pointedValue, protectionBackup))
+					{
+						return pointedValue;
+					}
+					return 0;
+				}
+				return pointedValue;
 			}
-			return pointedValue;
+			printf("readValue() exited because there is an issue with its hProcess, check its lifetime!\n");
+			return 0;
 		}
 
 		template <typename V, bool UNLOCK = false>
 		inline bool writeValue(const ghe::Address<A>& address, const V& pointedValue)
 		{
-			if (m_hProcessPtr == nullptr)
+			if (auto&& _lockedHProcessPtr = m_hProcessPtr.lock())
 			{
-				return false;
-			}
-
-			PB protectionBackup;
-			if constexpr (UNLOCK)
-			{
-				protectionBackup = unlock<V>(address, pointedValue);
-			}
-
-			if (WriteProcessMemory(*m_hProcessPtr, (LPVOID)address.value(), (LPCVOID)&pointedValue, sizeof(pointedValue), NULL) == 0)
-			{
-				printf("writeValue() exited with %ud as code error, check WriteProcessMemory call\n", GetLastError());
-				return false;
-			}
-
-			if constexpr (UNLOCK)
-			{
-				if (restore<V>(address, pointedValue, protectionBackup))
+				PB protectionBackup;
+				if constexpr (UNLOCK)
 				{
-					return true;
+					protectionBackup = unlock<V>(address, pointedValue);
 				}
-				return false;
+
+				if (WriteProcessMemory(*_lockedHProcessPtr, reinterpret_cast<LPVOID>(address.value()), reinterpret_cast<LPCVOID>(&pointedValue),
+					sizeof(pointedValue), NULL) == FALSE)
+				{
+					printf("writeValue() exited with %ud as code error, check WriteProcessMemory call\n", GetLastError());
+					return false;
+				}
+
+				if constexpr (UNLOCK)
+				{
+					if (restore<V>(address, pointedValue, protectionBackup))
+					{
+						return true;
+					}
+					return false;
+				}
+				return true;
 			}
-			return true;
+			printf("writeValue() exited because there is an issue with its hProcess, check its lifetime!\n");
+			return false;
 		}
 
 		A moduleBaseAddress(T processIdentifier, const std::string& moduleName)
@@ -141,7 +150,7 @@ namespace ghe
 				{
 					if (_tcscmp(ModuleEntry32.szModule, moduleName.c_str()) == 0)
 					{
-						moduleBaseAddress = (DWORD_PTR)ModuleEntry32.modBaseAddr;
+						moduleBaseAddress = reinterpret_cast<DWORD_PTR>(ModuleEntry32.modBaseAddr);
 						break;
 					}
 				} while (Module32Next(hSnapshot, &ModuleEntry32));
@@ -151,6 +160,6 @@ namespace ghe
 		}
 
 	private:
-		P* m_hProcessPtr = nullptr; //implement an std::weak_ptr<P>
+		std::weak_ptr<P> m_hProcessPtr;
 	};
 }

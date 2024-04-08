@@ -22,7 +22,9 @@ namespace ghe
 			setupPid();
 			setupHProcess();
 			setupBaseAddress();
-			m_memoryManager.setHProcess(&this->m_hProcess);
+			m_hProcessPtr = std::make_shared<P>(this->m_hProcess);
+			std::weak_ptr<P> _hProcessWeakPtr(m_hProcessPtr);
+			m_memoryManager.setHProcess(_hProcessWeakPtr);
 			log();
 		}
 
@@ -33,7 +35,9 @@ namespace ghe
 			setupPid();
 			setupHProcess();
 			setupBaseAddress();
-			m_memoryManager.setHProcess(&this->m_hProcess);
+			m_hProcessPtr = std::make_shared<P>(this->m_hProcess);
+			std::weak_ptr<P> _hProcessWeakPtr(m_hProcessPtr);
+			m_memoryManager.setHProcess(_hProcessWeakPtr);
 			log();
 		}
 
@@ -113,6 +117,7 @@ namespace ghe
 		ghe::WinMemoryManager<T, P, H, A, PB>& memoryManager() { return this->m_memoryManager; }
 
 	private:
+		std::shared_ptr<P> m_hProcessPtr;
 		std::string m_baseModuleName;
 		ghe::WinMemoryManager<T, P, H, A, PB> m_memoryManager;
 	};
