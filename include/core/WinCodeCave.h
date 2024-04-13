@@ -6,9 +6,14 @@
 
 namespace ghe
 {
-	namespace codeCave
+	/*class reverseEngine
 	{
-		namespace
+
+	};*/
+
+	namespace winCodeCave
+	{
+		namespace ASM
 		{
 			const DWORD NOP = 0x90;
 			const DWORD CALL = 0xE8;
@@ -26,34 +31,7 @@ namespace ghe
 			return _moduleInfo;
 		}
 
-		bool jumpCodeCave(BYTE* destAddress, const DWORD& jumpTo, const DWORD& length)
-		{
-			DWORD oldProtection;
-			
-			if (VirtualProtect(destAddress, length, PAGE_EXECUTE_READWRITE, &oldProtection) == NULL)
-			{
-				unsigned int codeError = GetLastError();
-				printf("jumpCodeCave() exited with %ud as code error, check VirtualProtect call 1\n", codeError);
-				return false;
-			}
-			DWORD reloadAddress = static_cast<DWORD>(jumpTo - reinterpret_cast<DWORD>(destAddress)) - 5;
-
-			*destAddress = JMP;
-			*(reinterpret_cast<DWORD*>(destAddress + 0x1)) = reloadAddress;
-			for (DWORD i = 0x5; i < length; ++i)
-			{
-				*(destAddress + i) = NOP;
-			}
-
-			if (VirtualProtect(destAddress, length, oldProtection, NULL) == NULL)
-			{
-				unsigned int codeError = GetLastError();
-				printf("jumpCodeCave() exited with %ud as code error, check VirtualProtect call 2\n", codeError);
-				return false;
-			}
-			return true;
-		}
-
+		//move to PatternScanning file
 		DWORD findPattern(const std::string& module, const std::string& pattern, const std::string& mask)
 		{
 			MODULEINFO _moduleInfo = getModuleInfo(module);
@@ -75,75 +53,145 @@ namespace ghe
 			return 0;
 		}
 
-		//bool patchBytes(DWORD destAddress, LPVOID patch, DWORD numBytes)
-		//{
-		//	DWORD oldProtect = 0;
-		//	DWORD srcAddress = reinterpret_cast<DWORD>(patch);
+		bool writeIntoMemory1(uintptr_t destAddress, const char* patch, size_t numBytes)
+		{
+			unsigned long oldProtection;
 
-		//	if (VirtualProtect((void*)(destAddress), numBytes, PAGE_EXECUTE_READWRITE, &oldProtect) == 0)
-		//	{
-		//		unsigned int codeError = GetLastError();
-		//		printf("patchBytes() exited with %ud as code error, check VirtualProtect call 1\n", codeError);
-		//		return false;
-		//	}
+			if (VirtualProtect(reinterpret_cast<LPVOID>(destAddress), static_cast<size_t>(numBytes), PAGE_EXECUTE_READWRITE, &oldProtection) == NULL)
+			{
+				printf("writeIntoMemory1() exited with %ud as code error, check VirtualProtect call 1\n", GetLastError());
+				return false;
+			}
 
-		//	__asm
-		//	{
-		//		nop
-		//		nop
-		//		nop
+			if (memcpy(reinterpret_cast<void*>(destAddress), reinterpret_cast<const void*>(patch), numBytes) != reinterpret_cast<void*>(destAddress))
+			{
+				printf("writeIntoMemory1() failed, check memcpy\n");
+				return false;
+			}
 
-		//		mov esi, srcAddress
-		//		mov edi, destAddress
-		//		mov ecx, numBytes
-		//		Start :
-		//		cmp ecx, 0
-		//			jz Exit
+			if (VirtualProtect(reinterpret_cast<LPVOID>(destAddress), static_cast<size_t>(numBytes), oldProtection, NULL) == NULL)
+			{
+				printf("writeIntoMemory1() exited with %ud as code error, check VirtualProtect call 2\n", GetLastError());
+				return false;
+			}
+			return true;
+		}
 
-		//			mov al, [esi]
-		//			mov[edi], al
-		//			dec ecx
-		//			inc esi
-		//			inc edi
-		//			jmp Start
-		//			Exit :
-		//		nop
-		//			nop
-		//			nop
-		//	}
+		bool WriteIntoMemory2(uintptr_t destAddress, LPVOID patch, size_t numBytes)
+		{
+			unsigned long  oldProtection = 0;
+			// Store the source address
+			DWORD srcAddress = PtrToUlong(patch);
 
-		//	if (VirtualProtect((void*)(destAddress), numBytes, oldProtect, &oldProtect) == 0)
-		//	{
-		//		unsigned int codeError = GetLastError();
-		//		printf("patchBytes() exited with %ud as code error, check VirtualProtect call 2\n", codeError);
-		//		return false;
-		//	}
-		//	return true;
-		//}
+			if (VirtualProtect(reinterpret_cast<LPVOID>(destAddress), static_cast<size_t>(numBytes), PAGE_EXECUTE_READWRITE, &oldProtection) == NULL)
+			{
+				printf("WriteIntoMemory2() exited with %ud as code error, check VirtualProtect call 1\n", GetLastError());
+				return false;
+			}
 
-		//bool callCodeCave(BYTE* destAddress, const DWORD& toCall, const DWORD& length)
-		//{
-		//	// Calculate the code cave for chat interception
-		//	DWORD offset = (PtrToUlong(func) - destAddress) - 5;
+			//SHOULD FIX THIS PART! use "__asm" for each line?
+			//__asm
+			//{
+			//	nop
+			//	nop
+			//	nop
 
-		//	// Buffer of NOPs, static since we limit to 'UCHAR_MAX' NOPs
-		//	BYTE nopPatch[0xFF] = { 0 };
+			//	mov esi, srcAddress		// Save the address
+			//	mov edi, destAddress	// Save the destination address
+			//	mov ecx, numBytes		// Save the size of the patch
+			//	Start :
+			//	cmp ecx, 0				// Are we done yet?
+			//		jz Exit					// If so, go to end of function
 
-		//	// Construct the patch to the function call
-		//	BYTE patch[5] = { CALL, 0x00, 0x00, 0x00, 0x00 };
-		//	memcpy(patch + 1, &offset, sizeof(DWORD));
-		//	WriteBytesASM(destAddress, patch, 5);
+			//		mov al, [esi]			// Move the byte at the patch into AL
+			//		mov[edi], al			// Move AL into the destination byte
+			//		dec ecx					// 1 less byte to patch
+			//		inc esi					// Next source byte
+			//		inc edi					// Next destination byte
+			//		jmp Start				// Repeat the process
+			//		Exit :
+			//	nop
+			//		nop
+			//		nop
+			//}
 
-		//	// We are done if we do not have NOPs
-		//	if (nopCount == 0)
-		//		return;
+			if (VirtualProtect(reinterpret_cast<LPVOID>(destAddress), static_cast<size_t>(numBytes), oldProtection, NULL) == NULL)
+			{
+				printf("writeIntoMemory1() exited with %ud as code error, check VirtualProtect call 2\n", GetLastError());
+				return false;
+			}
+			return true;
+		}
 
-		//	// Fill it with nops
-		//	memset(nopPatch, NOP, nopCount);
+		//by default its a jump code cave
+		template<unsigned int INSTRUCTION = ASM::JMP>
+		bool codeCave1(uintptr_t destAddress, const DWORD& funcAddress, const DWORD& length)
+		{
+			unsigned long oldProtection;
+			if (VirtualProtect(reinterpret_cast<LPVOID>(destAddress), static_cast<size_t>(length), PAGE_EXECUTE_READWRITE, &oldProtection) == NULL)
+			{
+				printf("jumpCodeCave() exited with %ud as code error, check VirtualProtect call 1\n", GetLastError());
+				return false;
+			}
 
-		//	// Make the patch now
-		//	WriteBytesASM(destAddress + 5, nopPatch, nopCount);
-		//	return false;
-		//}
+			DWORD offset = static_cast<DWORD>(funcAddress - static_cast<DWORD>(destAddress)) - 5;
+
+			if constexpr (INSTRUCTION == ASM::JMP)
+			{
+				*(reinterpret_cast<DWORD*>(destAddress)) = ASM::JMP;
+			}
+			else if constexpr (INSTRUCTION == ASM::CALL)
+			{
+				*(reinterpret_cast<DWORD*>(destAddress)) = ASM::CALL;
+			}
+
+			*(reinterpret_cast<DWORD*>(destAddress + 0x1)) = offset;
+
+			for (DWORD i = 0x5; i < length; ++i)
+			{
+				*(reinterpret_cast<DWORD*>(destAddress)+i) = ASM::NOP;
+			}
+
+			if (VirtualProtect(reinterpret_cast<LPVOID>(destAddress), static_cast<size_t>(length), static_cast<DWORD>(oldProtection), NULL) == NULL)
+			{
+				printf("jumpCodeCave() exited with %ud as code error, check VirtualProtect call 2\n", GetLastError());
+				return false;
+			}
+			return true;
+		}
+
+		template<unsigned int INSTRUCTION = ASM::CALL>
+		bool codeCave2(uintptr_t destAddress, VOID(*func)(VOID), BYTE nopCount)
+		{
+			//calculate the code cave for chat interception : offset = (PtrToUlong(func) - destAddress) - 5
+			DWORD offset = (reinterpret_cast<DWORD>(func) - static_cast<DWORD>(destAddress)) - 5;
+
+			//buffer of NOPs, static since we limit to 'UCHAR_MAX' NOPs
+			BYTE nopPatch[0xFF] = { 0 };
+
+			BYTE patch[5] = { 0x00, 0x00, 0x00, 0x00, 0x00 };
+			if constexpr (INSTRUCTION == ASM::CALL)
+			{
+				patch[0] = ASM::CALL;
+			}
+
+			if constexpr (INSTRUCTION == ASM::JMP)
+			{
+				patch[0] = ASM::JMP;
+			}
+
+			memcpy(patch + 1, &offset, sizeof(DWORD));
+			if (!WriteIntoMemory2(destAddress, static_cast<size_t>(patch), 5))
+			{
+				return false;
+			}
+
+			if (nopCount == 0)
+				return true;
+
+			memset(nopPatch, ASM::NOP, nopCount);
+
+			return WriteIntoMemory2(destAddress + 5, reinterpret_cast<LPVOID>(nopPatch), static_cast<size_t>(nopCount));
+		}
 	}
 }
