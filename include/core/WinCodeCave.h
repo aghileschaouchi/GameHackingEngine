@@ -144,10 +144,18 @@ namespace ghe
 
 			*(reinterpret_cast<DWORD*>(destAddress + 0x1)) = offset;
 
-			for (DWORD i = 0x5; i < length; ++i)
+			/*for (DWORD i = 0x5; i < length; ++i)
 			{
 				*(reinterpret_cast<DWORD*>(destAddress)+i) = ASM::NOP;
+			}*/
+
+			BYTE* _nopBuffer = new BYTE[length];
+			for (int i = 0; i < length; ++i)
+			{
+				_nopBuffer[i] = ASM::NOP;
 			}
+			memcpy(reinterpret_cast<DWORD*>(destAddress + 0x5 ), reinterpret_cast<DWORD*>(_nopBuffer), length);
+			delete[] _nopBuffer;
 
 			if (VirtualProtect(reinterpret_cast<LPVOID>(destAddress), static_cast<size_t>(length), static_cast<DWORD>(oldProtection), NULL) == NULL)
 			{
@@ -156,39 +164,64 @@ namespace ghe
 			}
 			return true;
 		}
+		
+		bool fillWithNop(uintptr_t destAddress, const DWORD& length)
+		{
+			unsigned long oldProtection;
+			if (VirtualProtect(reinterpret_cast<LPVOID>(destAddress), static_cast<size_t>(length), PAGE_EXECUTE_READWRITE, &oldProtection) == NULL)
+			{
+				printf("fillWithNop() exited with %ud as code error, check VirtualProtect call 1\n", GetLastError());
+				return false;
+			}
 
-		//template<unsigned int INSTRUCTION = ASM::CALL>
-		//bool codeCave2(uintptr_t destAddress, VOID(*func)(VOID), BYTE nopCount)
-		//{
-		//	//calculate the code cave for chat interception : offset = (PtrToUlong(func) - destAddress) - 5
-		//	DWORD offset = (reinterpret_cast<DWORD>(func) - static_cast<DWORD>(destAddress)) - 5;
+			BYTE* _nopBuffer = new BYTE[length];
+			for (int i = 0; i < length; ++i)
+			{
+				_nopBuffer[i] = ASM::NOP;
+			}
+			memcpy(reinterpret_cast<DWORD*>(destAddress), reinterpret_cast<DWORD*>(_nopBuffer), length);
+			delete[] _nopBuffer;
 
-		//	//buffer of NOPs, static since we limit to 'UCHAR_MAX' NOPs
-		//	BYTE nopPatch[0xFF] = { 0 };
+			if (VirtualProtect(reinterpret_cast<LPVOID>(destAddress), static_cast<size_t>(length), static_cast<DWORD>(oldProtection), NULL) == NULL)
+			{
+				printf("fillWithNop() exited with %ud as code error, check VirtualProtect call 2\n", GetLastError());
+				return false;
+			}
+			return true;
+		}
 
-		//	BYTE patch[5] = { 0x00, 0x00, 0x00, 0x00, 0x00 };
-		//	if constexpr (INSTRUCTION == ASM::CALL)
-		//	{
-		//		patch[0] = ASM::CALL;
-		//	}
+	//	template<unsigned int INSTRUCTION = ASM::CALL>
+	//	bool codeCave2(uintptr_t destAddress, VOID(*func)(VOID), BYTE nopCount)
+	//	{
+	//		//calculate the code cave for chat interception : offset = (PtrToUlong(func) - destAddress) - 5
+	//		DWORD offset = (reinterpret_cast<DWORD>(func) - static_cast<DWORD>(destAddress)) - 5;
 
-		//	if constexpr (INSTRUCTION == ASM::JMP)
-		//	{
-		//		patch[0] = ASM::JMP;
-		//	}
+	//		//buffer of NOPs, static since we limit to 'UCHAR_MAX' NOPs
+	//		BYTE nopPatch[0xFF] = { 0 };
 
-		//	memcpy(patch + 1, &offset, sizeof(DWORD));
-		//	if (!WriteIntoMemory2(destAddress, static_cast<size_t>(patch), 5))
-		//	{
-		//		return false;
-		//	}
+	//		BYTE patch[5] = { 0x00, 0x00, 0x00, 0x00, 0x00 };
+	//		if constexpr (INSTRUCTION == ASM::CALL)
+	//		{
+	//			patch[0] = ASM::CALL;
+	//		}
 
-		//	if (nopCount == 0)
-		//		return true;
+	//		if constexpr (INSTRUCTION == ASM::JMP)
+	//		{
+	//			patch[0] = ASM::JMP;
+	//		}
 
-		//	memset(nopPatch, ASM::NOP, nopCount);
+	//		memcpy(patch + 1, &offset, sizeof(DWORD));
+	//		if (!WriteIntoMemory2(destAddress, static_cast<size_t>(patch), 5))
+	//		{
+	//			return false;
+	//		}
 
-		//	return WriteIntoMemory2(destAddress + 5, reinterpret_cast<LPVOID>(nopPatch), static_cast<size_t>(nopCount));
-		//}
+	//		if (nopCount == 0)
+	//			return true;
+
+	//		memset(nopPatch, ASM::NOP, nopCount);
+
+	//		return WriteIntoMemory2(destAddress + 5, reinterpret_cast<LPVOID>(nopPatch), static_cast<size_t>(nopCount));
+	//	}
 	}
 }
