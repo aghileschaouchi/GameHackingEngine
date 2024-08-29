@@ -144,22 +144,42 @@ namespace ghe
 
 			*(reinterpret_cast<DWORD*>(destAddress + 0x1)) = offset;
 
-			/*for (DWORD i = 0x5; i < length; ++i)
+			for (DWORD i = 0x5; i < length; ++i)
 			{
 				*(reinterpret_cast<DWORD*>(destAddress)+i) = ASM::NOP;
-			}*/
+			}
 
-			BYTE* _nopBuffer = new BYTE[length];
+			//to replace by: BYTE _nopBuffer[5] = { 0x00, 0x00, 0x00, 0x00, 0x00 };
+			/*BYTE* _nopBuffer = new BYTE[length];
 			for (int i = 0; i < length; ++i)
 			{
 				_nopBuffer[i] = ASM::NOP;
 			}
 			memcpy(reinterpret_cast<DWORD*>(destAddress + 0x5 ), reinterpret_cast<DWORD*>(_nopBuffer), length);
-			delete[] _nopBuffer;
+			delete[] _nopBuffer;*/
 
 			if (VirtualProtect(reinterpret_cast<LPVOID>(destAddress), static_cast<size_t>(length), static_cast<DWORD>(oldProtection), NULL) == NULL)
 			{
 				printf("jumpCodeCave() exited with %ud as code error, check VirtualProtect call 2\n", GetLastError());
+				return false;
+			}
+			return true;
+		}
+
+		bool patchMemory(uintptr_t destAddress, BYTE* patch, const DWORD& length)
+		{
+			unsigned long oldProtection;
+			if (VirtualProtect(reinterpret_cast<LPVOID>(destAddress), static_cast<size_t>(length), PAGE_EXECUTE_READWRITE, &oldProtection) == NULL)
+			{
+				printf("fillWithNop() exited with %ud as code error, check VirtualProtect call 1\n", GetLastError());
+				return false;
+			}
+
+			memcpy(reinterpret_cast<DWORD*>(destAddress), reinterpret_cast<DWORD*>(patch), length);
+
+			if (VirtualProtect(reinterpret_cast<LPVOID>(destAddress), static_cast<size_t>(length), static_cast<DWORD>(oldProtection), NULL) == NULL)
+			{
+				printf("fillWithNop() exited with %ud as code error, check VirtualProtect call 2\n", GetLastError());
 				return false;
 			}
 			return true;
@@ -174,6 +194,7 @@ namespace ghe
 				return false;
 			}
 
+			//to replace by: BYTE _nopBuffer[5] = { 0x00, 0x00, 0x00, 0x00, 0x00 };
 			BYTE* _nopBuffer = new BYTE[length];
 			for (int i = 0; i < length; ++i)
 			{

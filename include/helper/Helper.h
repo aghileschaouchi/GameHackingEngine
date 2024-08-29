@@ -1,16 +1,20 @@
 #pragma once
 
+#include <iostream>
 #include <tchar.h>
 #include <string>
 #include <Windows.h>
 #include <stringapiset.h>
+#include <sstream>
 
 namespace helper
 {
 	template<typename A>
 	void debugMessageBox(const std::string& messsage, A address)
 	{
-		std::string _message(messsage + ": " + std::to_string(address));
+		std::stringstream stream;
+		stream << std::hex << address;
+		std::string _message(messsage + ": 0x" + stream.str());
 		int msgboxID = MessageBoxA(
 			NULL,
 			reinterpret_cast<LPCSTR>(_message.c_str()),
