@@ -100,7 +100,7 @@ namespace ghe
 			return false;
 		}
 
-		bool inject() override
+		bool buggedInject()
 		{
 			if (isDllPathInvalid())
 			{
@@ -136,55 +136,53 @@ namespace ghe
 			return false;
 		}
 
-		void simpleInjection(unsigned int ProcessID, const char* ModulePath)
+		bool inject() override
 		{
-			void* Token = nullptr;
-			TOKEN_PRIVILEGES Privileges;
-			if (OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, reinterpret_cast<void**>(&Token)) == 0)
+			void* _token = nullptr;
+			TOKEN_PRIVILEGES _privileges;
+			if (OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, reinterpret_cast<void**>(&_token)) == 0)
 			{
-				throw exception("Unable to open the local process token.");
+				printf("simpleInjection() exited with %ud as code error, check OpenProcessToken call\n", GetLastError());
+				return false;
 			}
 
-			Privileges.PrivilegeCount = 1;
-			LookupPrivilegeValue(nullptr, "SeDebugPrivilege", &Privileges.Privileges[0].Luid);
-			Privileges.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-			AdjustTokenPrivileges(Token, 0, &Privileges, sizeof(Privileges), nullptr, nullptr);
-			CloseHandle(Token);
+			_privileges.PrivilegeCount = 1;
+			LookupPrivilegeValue(nullptr, "SeDebugPrivilege", &_privileges.Privileges[0].Luid);
+			_privileges.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+			AdjustTokenPrivileges(_token, 0, &_privileges, sizeof(_privileges), nullptr, nullptr);
+			CloseHandle(_token);
 
-			void* Handle = OpenProcess(PROCESS_ALL_ACCESS, false, ProcessID);
-			if (Handle == nullptr)
+			if (auto&& _lockedHProcessPtr = m_hProcessPtr.lock())
 			{
-				throw exception("Unable to open a handle to the target process.");
+				void* _remoteString = VirtualAllocEx(*_lockedHProcessPtr, nullptr, m_maxInjectionPath, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+				if (WriteProcessMemory(*_lockedHProcessPtr, _remoteString, m_dllPath.c_str(), 260, nullptr) == 0)
+				{
+					printf("simpleInjection() exited with %ud as code error, check WriteProcessMemory call\n", GetLastError());
+					return false;
+				}
+
+				void* _loadLibraryAddress = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA");
+
+				void* _thread = CreateRemoteThread(*_lockedHProcessPtr, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(_loadLibraryAddress), _remoteString, 0, nullptr);
+				if (_thread == nullptr)
+				{
+					CloseHandle(_thread);
+					printf("simpleInjection() exited with %ud as code error, check CreateRemoteThread call\n", GetLastError());
+					return false;
+				}
+
+				if (WaitForSingleObject(_thread, m_timeOut) == WAIT_TIMEOUT)
+				{
+					CloseHandle(_thread);
+					printf("simpleInjection() exited with %ud as code error, check CreateRemoteThread call\n", GetLastError());
+					return false;
+				}
+
+				CloseHandle(_thread);
+				VirtualFreeEx(*_lockedHProcessPtr, _remoteString, m_maxInjectionPath, MEM_FREE);
+				return true;
 			}
-
-			void* RemoteString = VirtualAllocEx(Handle, nullptr, 520, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-			if (WriteProcessMemory(Handle, RemoteString, ModulePath, 260, nullptr) == 0)
-			{
-				CloseHandle(Handle);
-				throw exception("Unable to write module path into target process.");
-			}
-
-			void* LoadLibraryAddress = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA");
-
-			void* Thread = CreateRemoteThread(Handle, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(LoadLibraryAddress), RemoteString, 0, nullptr);
-			if (Thread == nullptr)
-			{
-				CloseHandle(Thread);
-				throw exception("Unable to create thread in target process.");
-			}
-
-			if (WaitForSingleObject(Thread, 1000) == WAIT_TIMEOUT)
-			{
-				CloseHandle(Handle);
-				CloseHandle(Thread);
-				throw exception("Remote thread timed out. Injection may have failed.");
-			}
-
-			CloseHandle(Thread);
-			VirtualFreeEx(Handle, RemoteString, 520, MEM_FREE);
-			CloseHandle(Handle);
-			UI::UpdateProcessList();
-			return;
+			return false;
 		}
 
 		void log() override
@@ -205,7 +203,7 @@ namespace ghe
 		static const UINT16 m_timeOut = 1000;
 		static const UINT16 m_maxInjectionPath = 520;
 		void* m_injectionLocation;
-		std::weak_ptr<H> m_hProcessPtr;
+		std::weak_ptr<P> m_hProcessPtr;
 		std::string m_dllPath;
 		std::string m_gameName;
 	};
